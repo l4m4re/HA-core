@@ -1,0 +1,3 @@
+[submodule "external/Homeassistant-Growatt-Local-Modbus"]
+	path = external/Homeassistant-Growatt-Local-Modbus
+	url = git@github.com:l4m4re/Homeassistant-Growatt-Local-Modbus.git
