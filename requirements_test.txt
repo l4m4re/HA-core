@@ -51,3 +51,7 @@ types-pytz==2025.2.0.20250809
 types-PyYAML==6.0.12.20250822
 types-requests==2.32.4.20250809
 types-xmltodict==0.13.0.3
+
+# growatt local depends on pymodbus and pytest-homeassistant-custom-component
+pymodbus==3.11.2
+pytest-homeassistant-custom-component
