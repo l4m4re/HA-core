@@ -15,4 +15,12 @@ uv pip install \
   --upgrade \
   --config-settings editable_mode=compat
 
+if [ -d "external/growatt-rtu-broker" ]; then
+  echo "Installing growatt-rtu-broker (editable)..."
+  uv pip install \
+    -e external/growatt-rtu-broker \
+    --upgrade \
+    --config-settings editable_mode=compat
+fi
+
 python3 -m script.translations develop --all
