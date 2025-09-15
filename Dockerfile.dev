@@ -24,6 +24,7 @@ RUN \
         git \
         cmake \
         autoconf \
+        socat \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
