@@ -54,3 +54,4 @@ types-xmltodict==0.13.0.3
 
 # growatt local depends on pymodbus and pytest-homeassistant-custom-component
 pymodbus==3.11.2
+pyserial==3.5
