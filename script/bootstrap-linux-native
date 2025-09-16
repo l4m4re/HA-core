@@ -17,6 +17,29 @@ log() { printf "\033[1;36m==> %s\033[0m\n" "$*"; }
 warn() { printf "\033[1;33m[WARN] %s\033[0m\n" "$*"; }
 err()  { printf "\033[1;31m[ERR]  %s\033[0m\n" "$*"; }
 
+APT_UPDATED=0
+
+apt_get_install() {
+  if ! command -v apt-get >/dev/null 2>&1; then
+    return 1
+  fi
+
+  local sudo_cmd=()
+  if command -v sudo >/dev/null 2>&1; then
+    sudo_cmd=(sudo)
+  fi
+
+  if [[ "${APT_UPDATED}" -eq 0 ]]; then
+    log "Updating apt package index..."
+    "${sudo_cmd[@]}" apt-get update -y
+    APT_UPDATED=1
+  fi
+
+  local packages=("$@")
+  log "Installing packages via apt-get: ${packages[*]}"
+  DEBIAN_FRONTEND=noninteractive "${sudo_cmd[@]}" apt-get install -y --no-install-recommends "${packages[@]}"
+}
+
 # Detect Debian-like OS (best-effort)
 if [[ -f /etc/os-release ]]; then
   . /etc/os-release || true
@@ -61,13 +84,8 @@ source .venv/bin/activate
 if ! command -v uv >/dev/null 2>&1; then
   log "Installing uv (package manager) for current user..."
   if ! command -v curl >/dev/null 2>&1; then
-    if command -v apt-get >/dev/null 2>&1; then
-      log "Installing curl via apt-get..."
-      if command -v sudo >/dev/null 2>&1; then
-        sudo apt-get update -y && sudo apt-get install -y curl
-      else
-        apt-get update -y && apt-get install -y curl
-      fi
+    if apt_get_install curl; then
+      :
     else
       err "Neither 'uv' nor 'curl' available. Please install 'uv' manually."
       exit 1
@@ -84,6 +102,15 @@ if ! command -v uv >/dev/null 2>&1; then
   exit 1
 fi
 
+# Ensure socat is available for serial tests
+if ! command -v socat >/dev/null 2>&1; then
+  if apt_get_install socat; then
+    :
+  else
+    warn "socat not found and could not be installed automatically. Serial simulator tests may fail."
+  fi
+fi
+
 log "Installing core development dependencies via existing bootstrap script..."
 # Leverage the existing script to mirror devcontainer behavior
 ./script/bootstrap
@@ -98,6 +125,9 @@ fi
 if [[ -f requirements.txt && -f requirements_test_all.txt ]]; then
   uv pip install -r requirements.txt -r requirements_test_all.txt
 fi
+# - pytest-homeassistant-custom-component (installed separately in the devcontainer)
+log "Ensuring pytest-homeassistant-custom-component is available..."
+uv pip install --prerelease=allow --no-deps pytest-homeassistant-custom-component
 # - Pre-commit tooling (for linting/hooks like in devcontainer)
 if [[ -f requirements_test_pre_commit.txt ]]; then
   uv pip install -r requirements_test_pre_commit.txt || true
