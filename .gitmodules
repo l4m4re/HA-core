@@ -1,6 +1,8 @@
 [submodule "external/Homeassistant-Growatt-Local-Modbus"]
 	path = external/Homeassistant-Growatt-Local-Modbus
 	url = https://github.com/l4m4re/Homeassistant-Growatt-Local-Modbus.git
+	pushurl = git@github.com:l4m4re/Homeassistant-Growatt-Local-Modbus.git
 [submodule "external/growatt-rtu-broker"]
 	path = external/growatt-rtu-broker
 	url = https://github.com/l4m4re/growatt-rtu-broker.git
+	pushurl = git@github.com:l4m4re/growatt-rtu-broker.git
