@@ -1,6 +1,6 @@
 # Bootstrapping
 
-Make sure to run `script/bootstrap-linux-native` after cloning this repository to set up the development environment and install the git hooks.
+Make sure to run `script/bootstrap-linux-native` after cloning this repository to set up the development environment and install the git hooks and to activate the Python virtual environment.
 
 # Codex Workflow Notes
 
