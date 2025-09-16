@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+# Git pre-commit hook wrapper that captures submodule work as patches.
+set -euo pipefail
+
+ROOT_DIR="$(git rev-parse --show-toplevel 2>/dev/null || echo "")"
+if [[ -z "$ROOT_DIR" ]]; then
+  echo "Unable to determine repository root; skipping submodule patch capture." >&2
+  exit 0
+fi
+
+HOOK_SCRIPT="$ROOT_DIR/script/submodule-pre-commit.sh"
+if [[ ! -x "$HOOK_SCRIPT" ]]; then
+  echo "Submodule capture script not found at $HOOK_SCRIPT" >&2
+  exit 0
+fi
+
+"$HOOK_SCRIPT"

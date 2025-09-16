@@ -133,11 +133,8 @@ if [[ -f requirements_test_pre_commit.txt ]]; then
   uv pip install -r requirements_test_pre_commit.txt || true
 fi
 
-# Install git hooks if pre-commit is available
-if command -v pre-commit >/dev/null 2>&1; then
-  log "Installing pre-commit git hooks..."
-  pre-commit install || true
-fi
+log "Installing submodule patch git hook..."
+./script/install-submodule-hooks.sh
 
 log "Bootstrap complete. Active environment: $(python -c 'import sys; print(sys.executable)')"
 log "Tip: Activate later with 'source .venv/bin/activate' before running tasks."
