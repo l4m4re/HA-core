@@ -2,6 +2,8 @@
 # Capture submodule changes as patch files during pre-commit and reset submodules.
 set -euo pipefail
 
+unset GIT_INDEX_FILE
+
 ROOT_DIR="$(git rev-parse --show-toplevel)"
 PATCH_ROOT="$ROOT_DIR/submodule-patches"
 mkdir -p "$PATCH_ROOT"
