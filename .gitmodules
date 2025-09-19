@@ -6,3 +6,6 @@
 	path = external/growatt-rtu-broker
 	url = https://github.com/l4m4re/growatt-rtu-broker.git
 	pushurl = git@github.com:l4m4re/growatt-rtu-broker.git
+[submodule "external/OpenInverterGateway"]
+	path = external/OpenInverterGateway
+	url = https://github.com/OpenInverterGateway/OpenInverterGateway.git
