@@ -1,24 +1,22 @@
 """AI tasks to be handled by agents."""
 
-from __future__ import annotations
-
 from dataclasses import dataclass
-from datetime import datetime, timedelta
+from datetime import timedelta
 import io
 import mimetypes
 from pathlib import Path
 import tempfile
-from typing import Any
+from typing import Any, override
 
 import voluptuous as vol
 
-from homeassistant.components import camera, conversation, media_source
+from homeassistant.components import camera, conversation, image, media_source
 from homeassistant.components.http.auth import async_sign_path
-from homeassistant.core import HomeAssistant, ServiceResponse, callback
+from homeassistant.core import Context, HomeAssistant, ServiceResponse, callback
 from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers import llm
 from homeassistant.helpers.chat_session import ChatSession, async_get_chat_session
-from homeassistant.util import RE_SANITIZE_FILENAME, slugify
+from homeassistant.util import RE_SANITIZE_FILENAME, dt as dt_util, slugify
 
 from .const import (
     DATA_COMPONENT,
@@ -31,14 +29,14 @@ from .const import (
 )
 
 
-def _save_camera_snapshot(image: camera.Image) -> Path:
+def _save_camera_snapshot(image_data: camera.Image | image.Image) -> Path:
     """Save camera snapshot to temp file."""
     with tempfile.NamedTemporaryFile(
         mode="wb",
-        suffix=mimetypes.guess_extension(image.content_type, False),
+        suffix=mimetypes.guess_extension(image_data.content_type, False),
         delete=False,
     ) as temp_file:
-        temp_file.write(image.content)
+        temp_file.write(image_data.content)
         return Path(temp_file.name)
 
 
@@ -54,26 +52,31 @@ async def _resolve_attachments(
     for attachment in attachments or []:
         media_content_id = attachment["media_content_id"]
 
-        # Special case for camera media sources
-        if media_content_id.startswith("media-source://camera/"):
-            # Extract entity_id from the media content ID
-            entity_id = media_content_id.removeprefix("media-source://camera/")
+        # Special case for certain media sources
+        for integration in camera, image:
+            media_source_prefix = f"media-source://{integration.DOMAIN}/"
+            if not media_content_id.startswith(media_source_prefix):
+                continue
 
-            # Get snapshot from camera
-            image = await camera.async_get_image(hass, entity_id)
+            # Extract entity_id from the media content ID
+            entity_id = media_content_id.removeprefix(media_source_prefix)
+
+            # Get snapshot from entity
+            image_data = await integration.async_get_image(hass, entity_id)
 
             temp_filename = await hass.async_add_executor_job(
-                _save_camera_snapshot, image
+                _save_camera_snapshot, image_data
             )
             created_files.append(temp_filename)
 
             resolved_attachments.append(
                 conversation.Attachment(
                     media_content_id=media_content_id,
-                    mime_type=image.content_type,
+                    mime_type=image_data.content_type,
                     path=temp_filename,
                 )
             )
+            break
         else:
             # Handle regular media sources
             media = await media_source.async_resolve_media(hass, media_content_id, None)
@@ -84,7 +87,7 @@ async def _resolve_attachments(
             resolved_attachments.append(
                 conversation.Attachment(
                     media_content_id=media_content_id,
-                    mime_type=media.mime_type,
+                    mime_type=attachment.get("media_content_type") or media.mime_type,
                     path=media.path,
                 )
             )
@@ -116,6 +119,7 @@ async def async_generate_data(
     structure: vol.Schema | None = None,
     attachments: list[dict] | None = None,
     llm_api: llm.API | None = None,
+    context: Context | None = None,
 ) -> GenDataTaskResult:
     """Run a data generation task in the AI Task integration."""
     if entity_id is None:
@@ -153,6 +157,7 @@ async def async_generate_data(
                 attachments=resolved_attachments or None,
                 llm_api=llm_api,
             ),
+            context,
         )
 
 
@@ -163,6 +168,7 @@ async def async_generate_image(
     entity_id: str | None = None,
     instructions: str,
     attachments: list[dict] | None = None,
+    context: Context | None = None,
 ) -> ServiceResponse:
     """Run an image generation task in the AI Task integration."""
     if entity_id is None:
@@ -198,6 +204,7 @@ async def async_generate_image(
                 instructions=instructions,
                 attachments=resolved_attachments or None,
             ),
+            context,
         )
 
     service_result = task_result.as_dict()
@@ -207,7 +214,7 @@ async def async_generate_image(
 
     source = hass.data[DATA_MEDIA_SOURCE]
 
-    current_time = datetime.now()
+    current_time = dt_util.now()
     ext = mimetypes.guess_extension(task_result.mime_type, False) or ".png"
     sanitized_task_name = RE_SANITIZE_FILENAME.sub("", slugify(task_name))
 
@@ -256,6 +263,7 @@ class GenDataTask:
     llm_api: llm.API | None = None
     """API to provide to the LLM."""
 
+    @override
     def __str__(self) -> str:
         """Return task as a string."""
         return f"<GenDataTask {self.name}: {id(self)}>"
@@ -292,6 +300,7 @@ class GenImageTask:
     attachments: list[conversation.Attachment] | None = None
     """List of attachments to go along the instructions."""
 
+    @override
     def __str__(self) -> str:
         """Return task as a string."""
         return f"<GenImageTask {self.name}: {id(self)}>"

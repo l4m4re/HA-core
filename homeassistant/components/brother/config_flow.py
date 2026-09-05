@@ -1,8 +1,6 @@
 """Adds config flow for Brother Printer."""
 
-from __future__ import annotations
-
-from typing import Any
+from typing import Any, override
 
 from brother import Brother, SnmpError, UnsupportedModelError
 import voluptuous as vol
@@ -13,6 +11,7 @@ from homeassistant.const import CONF_HOST, CONF_PORT, CONF_TYPE
 from homeassistant.core import HomeAssistant
 from homeassistant.data_entry_flow import section
 from homeassistant.exceptions import HomeAssistantError
+from homeassistant.helpers.selector import SelectSelector, SelectSelectorConfig
 from homeassistant.helpers.service_info.zeroconf import ZeroconfServiceInfo
 from homeassistant.util.network import is_host_valid
 
@@ -21,6 +20,7 @@ from .const import (
     DEFAULT_COMMUNITY,
     DEFAULT_PORT,
     DOMAIN,
+    PRINTER_TYPE_LASER,
     PRINTER_TYPES,
     SECTION_ADVANCED_SETTINGS,
 )
@@ -28,7 +28,12 @@ from .const import (
 DATA_SCHEMA = vol.Schema(
     {
         vol.Required(CONF_HOST): str,
-        vol.Optional(CONF_TYPE, default="laser"): vol.In(PRINTER_TYPES),
+        vol.Required(CONF_TYPE, default=PRINTER_TYPE_LASER): SelectSelector(
+            SelectSelectorConfig(
+                options=PRINTER_TYPES,
+                translation_key="printer_type",
+            )
+        ),
         vol.Required(SECTION_ADVANCED_SETTINGS): section(
             vol.Schema(
                 {
@@ -42,7 +47,12 @@ DATA_SCHEMA = vol.Schema(
 )
 ZEROCONF_SCHEMA = vol.Schema(
     {
-        vol.Optional(CONF_TYPE, default="laser"): vol.In(PRINTER_TYPES),
+        vol.Required(CONF_TYPE, default=PRINTER_TYPE_LASER): SelectSelector(
+            SelectSelectorConfig(
+                options=PRINTER_TYPES,
+                translation_key="printer_type",
+            )
+        ),
         vol.Required(SECTION_ADVANCED_SETTINGS): section(
             vol.Schema(
                 {
@@ -104,6 +114,7 @@ class BrotherConfigFlow(ConfigFlow, domain=DOMAIN):
         self.brother: Brother
         self.host: str | None = None
 
+    @override
     async def async_step_user(
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
@@ -115,7 +126,7 @@ class BrotherConfigFlow(ConfigFlow, domain=DOMAIN):
                 model, serial = await validate_input(self.hass, user_input)
             except InvalidHost:
                 errors[CONF_HOST] = "wrong_host"
-            except (ConnectionError, TimeoutError):
+            except ConnectionError, TimeoutError:
                 errors["base"] = "cannot_connect"
             except SnmpError:
                 errors["base"] = "snmp_error"
@@ -132,6 +143,7 @@ class BrotherConfigFlow(ConfigFlow, domain=DOMAIN):
             step_id="user", data_schema=DATA_SCHEMA, errors=errors
         )
 
+    @override
     async def async_step_zeroconf(
         self, discovery_info: ZeroconfServiceInfo
     ) -> ConfigFlowResult:
@@ -151,7 +163,7 @@ class BrotherConfigFlow(ConfigFlow, domain=DOMAIN):
             await self.brother.async_update()
         except UnsupportedModelError:
             return self.async_abort(reason="unsupported_model")
-        except (ConnectionError, SnmpError, TimeoutError):
+        except ConnectionError, SnmpError, TimeoutError:
             return self.async_abort(reason="cannot_connect")
 
         # Check if already configured
@@ -199,7 +211,7 @@ class BrotherConfigFlow(ConfigFlow, domain=DOMAIN):
                 await validate_input(self.hass, user_input, entry.unique_id)
             except InvalidHost:
                 errors[CONF_HOST] = "wrong_host"
-            except (ConnectionError, TimeoutError):
+            except ConnectionError, TimeoutError:
                 errors["base"] = "cannot_connect"
             except SnmpError:
                 errors["base"] = "snmp_error"

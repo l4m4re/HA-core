@@ -53,7 +53,8 @@ for submodule in "${SUBMODULES[@]}"; do
   fi
 
   (cd "$SUB_PATH" && git reset --hard HEAD >/dev/null)
-  (cd "$SUB_PATH" && git clean -fdx >/dev/null)
+  # Leave untracked research artifacts in place; they are intentionally outside
+  # the parent repository's commit and must not be removed by this hook.
   git submodule update --init --checkout "$submodule" >/dev/null
 
   rel_patch="${patch_file#$ROOT_DIR/}"

@@ -1,10 +1,9 @@
 """Support for Synology DSM sensors."""
 
-from __future__ import annotations
-
+from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import datetime, timedelta
-from typing import cast
+from typing import TYPE_CHECKING, Any, cast, override
 
 from synology_dsm.api.core.external_usb import (
     SynoCoreExternalUSB,
@@ -49,6 +48,8 @@ class SynologyDSMSensorEntityDescription(
     SensorEntityDescription, SynologyDSMEntityDescription
 ):
     """Describes Synology DSM sensor entity."""
+
+    value_fn: Callable[[SynoDSMInformation, str], Any] = getattr
 
 
 UTILISATION_SENSORS: tuple[SynologyDSMSensorEntityDescription, ...] = (
@@ -327,8 +328,10 @@ INFORMATION_SENSORS: tuple[SynologyDSMSensorEntityDescription, ...] = (
     SynologyDSMSensorEntityDescription(
         api_key=SynoDSMInformation.API_KEY,
         key="uptime",
-        translation_key="uptime",
-        device_class=SensorDeviceClass.TIMESTAMP,
+        value_fn=lambda api_information, _: (
+            utcnow() - timedelta(seconds=api_information.uptime)
+        ),
+        device_class=SensorDeviceClass.UPTIME,
         entity_registry_enabled_default=False,
         entity_category=EntityCategory.DIAGNOSTIC,
     ),
@@ -345,7 +348,8 @@ async def async_setup_entry(
     api = data.api
     coordinator = data.coordinator_central
     storage = api.storage
-    assert storage is not None
+    if TYPE_CHECKING:
+        assert storage is not None
     known_usb_devices: set[str] = set()
 
     def _check_usb_devices() -> None:
@@ -440,6 +444,7 @@ class SynoDSMUtilSensor(SynoDSMSensor):
     """Representation a Synology Utilisation sensor."""
 
     @property
+    @override
     def native_value(self) -> StateType:
         """Return the state."""
         attr = getattr(self._api.utilisation, self.entity_description.key)
@@ -456,6 +461,7 @@ class SynoDSMUtilSensor(SynoDSMSensor):
         return attr  # type: ignore[no-any-return]
 
     @property
+    @override
     def available(self) -> bool:
         """Return True if entity is available."""
         return bool(self._api.utilisation) and super().available
@@ -477,6 +483,7 @@ class SynoDSMStorageSensor(SynologyDSMDeviceEntity, SynoDSMSensor):
         super().__init__(api, coordinator, description, device_id)
 
     @property
+    @override
     def native_value(self) -> StateType:
         """Return the state."""
         return cast(
@@ -501,10 +508,12 @@ class SynoDSMExternalUSBSensor(SynologyDSMDeviceEntity, SynoDSMSensor):
         super().__init__(api, coordinator, description, device_id)
 
     @property
+    @override
     def native_value(self) -> StateType:
         """Return the state."""
         external_usb = self._api.external_usb
-        assert external_usb is not None
+        if TYPE_CHECKING:
+            assert external_usb is not None
         if "device" in self.entity_description.key:
             for device in external_usb.get_devices.values():
                 if device.device_name == self._device_id:
@@ -523,33 +532,37 @@ class SynoDSMExternalUSBSensor(SynologyDSMDeviceEntity, SynoDSMSensor):
 
         return attr  # type: ignore[no-any-return]
 
+    @property
+    @override
+    def available(self) -> bool:
+        """Return True if entity is available."""
+        external_usb = self._api.external_usb
+        assert external_usb is not None
+        if "device" in self.entity_description.key:
+            for device in external_usb.get_devices.values():
+                if device.device_name == self._device_id:
+                    return super().available
+        elif "partition" in self.entity_description.key:
+            for device in external_usb.get_devices.values():
+                for partition in device.device_partitions.values():
+                    if partition.partition_title == self._device_id:
+                        return super().available
+        return False
+
 
 class SynoDSMInfoSensor(SynoDSMSensor):
     """Representation a Synology information sensor."""
 
-    def __init__(
-        self,
-        api: SynoApi,
-        coordinator: SynologyDSMCentralUpdateCoordinator,
-        description: SynologyDSMSensorEntityDescription,
-    ) -> None:
-        """Initialize the Synology SynoDSMInfoSensor entity."""
-        super().__init__(api, coordinator, description)
-        self._previous_uptime: str | None = None
-        self._last_boot: datetime | None = None
-
     @property
+    @override
     def native_value(self) -> StateType | datetime:
         """Return the state."""
-        attr = getattr(self._api.information, self.entity_description.key)
-        if attr is None:
+        if self._api.information is None:
             return None
 
-        if self.entity_description.key == "uptime":
-            # reboot happened or entity creation
-            if self._previous_uptime is None or self._previous_uptime > attr:
-                self._last_boot = utcnow() - timedelta(seconds=attr)
-
-            self._previous_uptime = attr
-            return self._last_boot
-        return attr  # type: ignore[no-any-return]
+        return cast(
+            StateType | datetime,
+            self.entity_description.value_fn(
+                self._api.information, self.entity_description.key
+            ),
+        )

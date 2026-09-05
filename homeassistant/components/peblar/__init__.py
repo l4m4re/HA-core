@@ -1,7 +1,5 @@
 """Integration for Peblar EV chargers."""
 
-from __future__ import annotations
-
 import asyncio
 
 from aiohttp import CookieJar
@@ -18,6 +16,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ConfigEntryAuthFailed, ConfigEntryNotReady
 from homeassistant.helpers.aiohttp_client import async_create_clientsession
 
+from .const import DOMAIN
 from .coordinator import (
     PeblarConfigEntry,
     PeblarDataUpdateCoordinator,
@@ -50,12 +49,21 @@ async def async_setup_entry(hass: HomeAssistant, entry: PeblarConfigEntry) -> bo
         system_information = await peblar.system_information()
         api = await peblar.rest_api(enable=True, access_mode=AccessMode.READ_WRITE)
     except PeblarConnectionError as err:
-        raise ConfigEntryNotReady("Could not connect to Peblar charger") from err
+        raise ConfigEntryNotReady(
+            translation_domain=DOMAIN,
+            translation_key="communication_error",
+            translation_placeholders={"error": str(err)},
+        ) from err
     except PeblarAuthenticationError as err:
-        raise ConfigEntryAuthFailed from err
+        raise ConfigEntryAuthFailed(
+            translation_domain=DOMAIN,
+            translation_key="authentication_error",
+        ) from err
     except PeblarError as err:
         raise ConfigEntryNotReady(
-            "Unknown error occurred while connecting to Peblar charger"
+            translation_domain=DOMAIN,
+            translation_key="unknown_error",
+            translation_placeholders={"error": str(err)},
         ) from err
 
     # Setup the data coordinators

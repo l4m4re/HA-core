@@ -1,12 +1,11 @@
 """Run Home Assistant."""
 
-from __future__ import annotations
-
 import asyncio
 from collections.abc import Generator
 from contextlib import contextmanager
 import dataclasses
 from datetime import datetime
+import errno
 import fcntl
 from io import TextIOWrapper
 import json
@@ -91,7 +90,8 @@ def _report_existing_instance(lock_file_path: Path, config_dir: str) -> None:
             if content := f.read().strip():
                 existing_info = json.loads(content)
                 start_dt = datetime.fromtimestamp(existing_info["start_ts"])
-                # Format with timezone abbreviation if available, otherwise add local time indicator
+                # Format with timezone abbreviation if available,
+                # otherwise add local time indicator
                 if tz_abbr := start_dt.strftime("%Z"):
                     start_time = start_dt.strftime(f"%Y-%m-%d %H:%M:%S {tz_abbr}")
                 else:
@@ -145,7 +145,8 @@ def ensure_single_execution(config_dir: str) -> Generator[SingleExecutionLock]:
         # If we got the lock (no exception), write our instance info
         _write_lock_info(lock_file)
 
-        # Yield the context - lock will be released when the with statement closes the file
+        # Yield the context - lock will be released when the
+        # with statement closes the file
         # IMPORTANT: We don't unlink the file to avoid races where multiple processes
         # could create different lock files
         yield lock_context
@@ -172,52 +173,53 @@ class RuntimeConfig:
     safe_mode: bool = False
 
 
-class HassEventLoopPolicy(asyncio.DefaultEventLoopPolicy):
-    """Event loop policy for Home Assistant."""
+def create_event_loop(debug: bool = False) -> asyncio.AbstractEventLoop:
+    """Create the Home Assistant event loop."""
+    loop: asyncio.AbstractEventLoop = asyncio.EventLoop()
+    configure_event_loop(loop, debug)
+    return loop
 
-    def __init__(self, debug: bool) -> None:
-        """Init the event loop policy."""
-        super().__init__()
-        self.debug = debug
 
-    @property
-    def loop_name(self) -> str:
-        """Return name of the loop."""
-        return self._loop_factory.__name__  # type: ignore[no-any-return,attr-defined]
+def configure_event_loop(loop: asyncio.AbstractEventLoop, debug: bool = False) -> None:
+    """Apply the Home Assistant configuration to an event loop."""
+    loop.set_exception_handler(_async_loop_exception_handler)
+    if debug:
+        loop.set_debug(True)
 
-    def new_event_loop(self) -> asyncio.AbstractEventLoop:
-        """Get the event loop."""
-        loop: asyncio.AbstractEventLoop = super().new_event_loop()
-        loop.set_exception_handler(_async_loop_exception_handler)
-        if self.debug:
-            loop.set_debug(True)
-
-        executor = InterruptibleThreadPoolExecutor(
-            thread_name_prefix="SyncWorker", max_workers=MAX_EXECUTOR_WORKERS
-        )
-        loop.set_default_executor(executor)
-        loop.set_default_executor = warn_use(  # type: ignore[method-assign]
-            loop.set_default_executor, "sets default executor on the event loop"
-        )
-        # bind the built-in time.monotonic directly as loop.time to avoid the
-        # overhead of the additional method call since its the most called loop
-        # method and its roughly 10%+ of all the call time in base_events.py
-        loop.time = monotonic  # type: ignore[method-assign]
-        return loop
+    executor = InterruptibleThreadPoolExecutor(
+        thread_name_prefix="SyncWorker", max_workers=MAX_EXECUTOR_WORKERS
+    )
+    loop.set_default_executor(executor)
+    loop.set_default_executor = warn_use(  # type: ignore[method-assign]
+        loop.set_default_executor, "sets default executor on the event loop"
+    )
+    # bind the built-in time.monotonic directly as loop.time to avoid the
+    # overhead of the additional method call since its the most called loop
+    # method and its roughly 10%+ of all the call time in base_events.py
+    loop.time = monotonic  # type: ignore[method-assign]
 
 
 @callback
-def _async_loop_exception_handler(_: Any, context: dict[str, Any]) -> None:
+def _async_loop_exception_handler(
+    loop: asyncio.AbstractEventLoop,
+    context: dict[str, Any],
+) -> None:
     """Handle all exception inside the core loop."""
+    fatal_error: str | None = None
     kwargs = {}
     if exception := context.get("exception"):
         kwargs["exc_info"] = (type(exception), exception, exception.__traceback__)
+        if isinstance(exception, OSError) and exception.errno == errno.EMFILE:
+            # Too many open files - something is leaking them, and it's likely
+            # to be quite unrecoverable if the event loop can't pump messages
+            # (e.g. unable to accept a socket).
+            fatal_error = str(exception)
 
     logger = logging.getLogger(__package__)
     if source_traceback := context.get("source_traceback"):
         stack_summary = "".join(traceback.format_list(source_traceback))
         logger.error(
-            "Error doing job: %s (%s): %s",
+            "Error doing job: %s (task: %s): %s",
             context["message"],
             context.get("task"),
             stack_summary,
@@ -226,11 +228,19 @@ def _async_loop_exception_handler(_: Any, context: dict[str, Any]) -> None:
         return
 
     logger.error(
-        "Error doing job: %s (%s)",
+        "Error doing job: %s (task: %s)",
         context["message"],
         context.get("task"),
         **kwargs,  # type: ignore[arg-type]
     )
+
+    if fatal_error:
+        logger.error(
+            "Fatal error '%s' raised in event loop, shutting it down",
+            fatal_error,
+        )
+        loop.stop()
+        loop.close()
 
 
 async def setup_and_run_hass(runtime_config: RuntimeConfig) -> int:
@@ -263,9 +273,8 @@ def run(runtime_config: RuntimeConfig) -> int:
     """Run Home Assistant."""
     _enable_posix_spawn()
     set_open_file_descriptor_limit()
-    asyncio.set_event_loop_policy(HassEventLoopPolicy(runtime_config.debug))
     # Backport of cpython 3.9 asyncio.run with a _cancel_all_tasks that times out
-    loop = asyncio.new_event_loop()
+    loop = create_event_loop(runtime_config.debug)
     try:
         asyncio.set_event_loop(loop)
         return loop.run_until_complete(setup_and_run_hass(runtime_config))

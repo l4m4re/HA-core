@@ -6,21 +6,35 @@ set -e
 
 cd "$(realpath "$(dirname "$0")/..")"
 
+if [ -z "${VIRTUAL_ENV:-}" ] && [ -f .venv/bin/activate ]; then
+  . .venv/bin/activate
+fi
+
 echo "Installing development dependencies..."
 uv pip install \
   -e . \
+  -r requirements_all.txt \
   -r requirements_test.txt \
   colorlog \
-  --constraint homeassistant/package_constraints.txt \
   --upgrade \
   --config-settings editable_mode=compat
 
 if [ -d "external/growatt-rtu-broker" ]; then
   echo "Installing growatt-rtu-broker (editable)..."
-  uv pip install \
+  if uv pip install \
     -e external/growatt-rtu-broker \
     --upgrade \
-    --config-settings editable_mode=compat
+    --config-settings editable_mode=compat; then
+    :
+  else
+    echo "The broker package metadata is not accepted by current setuptools; exposing its source tree instead."
+    site_packages=$(python3 -c 'import sysconfig; print(sysconfig.get_path("purelib"))')
+    printf '%s\n' "$(pwd)/external/growatt-rtu-broker" > "$site_packages/growatt_rtu_broker_local.pth"
+    python3 -c 'import growatt_broker'
+  fi
 fi
+
+echo "Installing pytest-homeassistant-custom-component..."
+uv pip install --prerelease=allow pytest-homeassistant-custom-component
 
 python3 -m script.translations develop --all

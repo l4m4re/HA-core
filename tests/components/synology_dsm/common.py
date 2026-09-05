@@ -1,14 +1,27 @@
 """Configure Synology DSM tests."""
 
-from __future__ import annotations
-
 from unittest.mock import AsyncMock, Mock
 
 from awesomeversion import AwesomeVersion
 from synology_dsm.api.core.external_usb import SynoCoreExternalUSBDevice
+from synology_dsm.api.core.hardware import FanSpeed
 from synology_dsm.api.storage.storage import SynoStorageDisk, SynoStorageVolume
 
 from .consts import SERIAL
+
+
+def mock_dsm_hardware(fan_speed: FanSpeed = FanSpeed.COOL) -> Mock:
+    """Mock SynologyDSM hardware information."""
+    return AsyncMock(
+        update=AsyncMock(),
+        fan_speed=fan_speed,
+        supported_fan_speeds=[
+            FanSpeed.FULL,
+            FanSpeed.COOL,
+            FanSpeed.QUIET,
+            FanSpeed.QUIET_STOP,
+        ],
+    )
 
 
 def mock_dsm_information(
@@ -110,6 +123,11 @@ def mock_dsm_storage_disks() -> list[SynoStorageDisk]:
         },
     }
     return [SynoStorageDisk(**disk_info) for disk_info in disks_data.values()]
+
+
+def mock_dsm_external_usb_devices_usb0() -> dict[str, SynoCoreExternalUSBDevice]:
+    """Mock SynologyDSM external USB device with no USB."""
+    return {}
 
 
 def mock_dsm_external_usb_devices_usb1() -> dict[str, SynoCoreExternalUSBDevice]:

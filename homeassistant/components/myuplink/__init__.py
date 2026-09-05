@@ -1,7 +1,5 @@
 """The myUplink integration."""
 
-from __future__ import annotations
-
 from http import HTTPStatus
 import logging
 
@@ -12,12 +10,14 @@ from myuplink import MyUplinkAPI, get_manufacturer, get_model, get_system_name
 from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.exceptions import ConfigEntryAuthFailed, ConfigEntryNotReady
-from homeassistant.helpers import (
-    aiohttp_client,
-    config_entry_oauth2_flow,
-    device_registry as dr,
+from homeassistant.helpers import device_registry as dr
+from homeassistant.helpers.aiohttp_client import async_get_clientsession
+from homeassistant.helpers.config_entry_oauth2_flow import (
+    ImplementationUnavailableError,
+    OAuth2Session,
+    async_get_config_entry_implementation,
 )
-from homeassistant.helpers.device_registry import DeviceEntry
+from homeassistant.helpers.device_registry import AnyDeviceEntry
 
 from .api import AsyncConfigEntryAuth
 from .const import DOMAIN, OAUTH2_SCOPES
@@ -40,13 +40,16 @@ async def async_setup_entry(
 ) -> bool:
     """Set up myUplink from a config entry."""
 
-    implementation = (
-        await config_entry_oauth2_flow.async_get_config_entry_implementation(
-            hass, config_entry
-        )
-    )
-    session = config_entry_oauth2_flow.OAuth2Session(hass, config_entry, implementation)
-    auth = AsyncConfigEntryAuth(aiohttp_client.async_get_clientsession(hass), session)
+    try:
+        implementation = await async_get_config_entry_implementation(hass, config_entry)
+    except ImplementationUnavailableError as err:
+        raise ConfigEntryNotReady(
+            translation_domain=DOMAIN,
+            translation_key="implementation_unavailable",
+        ) from err
+
+    session = OAuth2Session(hass, config_entry, implementation)
+    auth = AsyncConfigEntryAuth(async_get_clientsession(hass), session)
 
     try:
         await auth.async_get_access_token()
@@ -116,7 +119,7 @@ def create_devices(
 
 
 async def async_remove_config_entry_device(
-    hass: HomeAssistant, config_entry: MyUplinkConfigEntry, device_entry: DeviceEntry
+    hass: HomeAssistant, config_entry: MyUplinkConfigEntry, device_entry: AnyDeviceEntry
 ) -> bool:
     """Remove myuplink config entry from a device."""
 
