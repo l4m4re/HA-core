@@ -1,0 +1,113 @@
+{
+  "date": "2026-09-06",
+  "production": {
+    "host": "192.168.1.148",
+    "ha_os": "16.1",
+    "architecture": "aarch64",
+    "core": "2025.9.3",
+    "supervisor": "2026.08.0",
+    "growatt_model": "MIN 6000TL-XH",
+    "growatt_type": "hybrid_120_TL_XH",
+    "growatt_serial": "SNL0CGV020",
+    "growatt_production_port": 5020,
+    "growatt_dev_broker_port": 5021,
+    "growatt_unit": 1,
+    "growatt_address": 1,
+    "growatt_power_control": false
+  },
+  "backup": {
+    "slug": "5852fb45",
+    "size_bytes": 1566412800,
+    "sha256": "faf8acba94d504af26bb70f28dfb065eb2db7634a2cfca97ac60a2a08643c1b0",
+    "local_path": "/tmp/HA-dev-1R-20260906/5852fb45.tar"
+  },
+  "recorder_snapshot": {
+    "sha256": "91bba8534e0eb1b6f85501d37ef0e806a447c03ece0570ab3b6d6f96e2c4f897",
+    "schema_version": 50,
+    "clone_migration_schema_version": 53,
+    "states": 1183856,
+    "events": 66879,
+    "statistics": 829810,
+    "statistics_short_term": 122088,
+    "statistics_meta": 127,
+    "statistics_runs": 3053
+  },
+  "influxdb": {
+    "addon": "a0d7b954_influxdb",
+    "version": "5.0.2",
+    "data_path": "/mnt/data/supervisor/apps/data/a0d7b954_influxdb",
+    "approximate_size": "2.0 GiB",
+    "databases": ["_internal", "homeassistant"],
+    "retention_policy": "autogen",
+    "dev_writer": false,
+    "recommendation": "REMOVE_LEGACY_INFLUXDB_AFTER_EXTERNAL_READER_CHECK"
+  },
+  "energy_entities": [
+    {
+      "entity_id": "sensor.growatt_input_1_total_energy",
+      "unique_id": "growatt_local_SNL0CGV020_input_1_energy_total",
+      "unit": "kWh",
+      "state_class": "total_increasing"
+    },
+    {
+      "entity_id": "sensor.growatt_input_2_total_energy",
+      "unique_id": "growatt_local_SNL0CGV020_input_2_energy_total",
+      "unit": "kWh",
+      "state_class": "total_increasing"
+    },
+    {
+      "entity_id": "sensor.growatt_battery_charged_total",
+      "unique_id": "growatt_local_SNL0CGV020_charge_energy_total",
+      "unit": "kWh",
+      "state_class": "total_increasing"
+    },
+    {
+      "entity_id": "sensor.growatt_battery_discharged_total",
+      "unique_id": "growatt_local_SNL0CGV020_discharge_energy_total",
+      "unit": "kWh",
+      "state_class": "total_increasing"
+    },
+    {
+      "entity_id": "sensor.growatt_energy_to_user_today",
+      "unique_id": "growatt_local_SNL0CGV020_energy_to_user_today",
+      "unit": "kWh",
+      "state_class": "total_increasing"
+    },
+    {
+      "entity_id": "sensor.growatt_soc",
+      "unique_id": "growatt_local_SNL0CGV020_soc",
+      "unit": "%",
+      "device_class": "battery"
+    },
+    {
+      "entity_id": "sensor.p1_energy_consumption_tariff_1",
+      "unique_id": "p1-t1",
+      "unit": "kWh",
+      "state_class": "total_increasing"
+    },
+    {
+      "entity_id": "sensor.p1_energy_consumption_tariff_2",
+      "unique_id": "p1-t2",
+      "unit": "kWh",
+      "state_class": "total_increasing"
+    },
+    {
+      "entity_id": "sensor.p1_energy_returned_tariff_1",
+      "unique_id": "p1-rt1",
+      "unit": "kWh",
+      "state_class": "total_increasing"
+    },
+    {
+      "entity_id": "sensor.p1_energy_returned_tariff_2",
+      "unique_id": "p1-rt2",
+      "unit": "kWh",
+      "state_class": "total_increasing"
+    },
+    {
+      "entity_id": "sensor.zoef_energy",
+      "unique_id": "E465B8F1DDD4-switch:0-energy",
+      "unit": "kWh",
+      "state_class": "total_increasing"
+    }
+  ]
+}
