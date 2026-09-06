@@ -93,8 +93,8 @@ The trace has 21 transmitted requests, 21 received responses, one client
 retry, and one transaction-ID mismatch. All 20 logical reads eventually
 completed. The exact sequence is:
 
-1. At `18:43:17.256`, TID 13 sent FC04 input start 3000, count 125.
-2. At `18:43:17.256`, TID 13 received a 259-byte FC04 response.
+1. At `18:43:16.164`, TID 13 sent FC04 input start 3000, count 125.
+2. At `18:43:17.254`, TID 13 received a 259-byte FC04 response.
 3. At `18:43:17.256`, TID 14 sent FC04 input start 3125, count 125.
 4. TID 14 timed out at the PyModbus 3-second boundary and was retried at
    `18:43:20.260` with the same TID and identical request.
