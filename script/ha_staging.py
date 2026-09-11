@@ -24,6 +24,10 @@ CONFIG_DIR = STAGING_ROOT / "ha-config"
 STATE_PATH = STAGING_ROOT / "state.json"
 PID_PATH = STAGING_ROOT / "ha.pid"
 LOG_PATH = STAGING_ROOT / "home-assistant.log"
+ENTITY_REGISTRY_PATH = CONFIG_DIR / ".storage" / "core.entity_registry"
+LOVELACE_DASHBOARD_PATH = CONFIG_DIR / ".storage" / "lovelace.dashboard_staging"
+LOVELACE_REGISTRY_PATH = CONFIG_DIR / ".storage" / "lovelace_dashboards"
+STAGING_DASHBOARD_SOURCE = REPO_ROOT / "script" / "ha_staging_dashboard.json"
 GROWATT_SOURCE = (
     REPO_ROOT
     / "external"
@@ -126,6 +130,66 @@ def set_growatt_mode(mode: str) -> None:
         path.write_text(json.dumps(document, indent=2) + "\n", encoding="utf-8")
 
 
+def apply_entity_safety_overrides(mode: str) -> None:
+    """Apply the staging mode to Growatt write entities."""
+
+    if not ENTITY_REGISTRY_PATH.exists():
+        return
+    document = json.loads(ENTITY_REGISTRY_PATH.read_text(encoding="utf-8"))
+    changed = False
+    for entity in document.get("data", {}).get("entities", []):
+        if entity.get("platform") != "growatt_local":
+            continue
+        domain = entity.get("entity_id", "").split(".", 1)[0]
+        if domain not in {"number", "switch"}:
+            continue
+        disabled_by = None if mode == "HIL_CONTROL" else "user"
+        if entity.get("disabled_by") != disabled_by:
+            entity["disabled_by"] = disabled_by
+            changed = True
+    if changed:
+        ENTITY_REGISTRY_PATH.write_text(
+            json.dumps(document, indent=2) + "\n", encoding="utf-8"
+        )
+
+
+def install_staging_dashboard() -> None:
+    """Install the bounded engineering dashboard in staging storage."""
+
+    if not STAGING_DASHBOARD_SOURCE.exists():
+        return
+    config = json.loads(STAGING_DASHBOARD_SOURCE.read_text(encoding="utf-8"))
+    dashboard = {
+        "version": 1,
+        "minor_version": 1,
+        "key": "lovelace.dashboard_staging",
+        "data": {"config": config},
+    }
+    LOVELACE_DASHBOARD_PATH.write_text(
+        json.dumps(dashboard, indent=2) + "\n", encoding="utf-8"
+    )
+
+    if not LOVELACE_REGISTRY_PATH.exists():
+        return
+    registry = json.loads(LOVELACE_REGISTRY_PATH.read_text(encoding="utf-8"))
+    items = registry.setdefault("data", {}).setdefault("items", [])
+    staging_item = {
+        "id": "dashboard_staging",
+        "show_in_sidebar": True,
+        "icon": "mdi:solar-power",
+        "title": "Growatt Staging",
+        "require_admin": False,
+        "mode": "storage",
+        "url_path": "growatt-staging",
+    }
+    if staging_item not in items:
+        items[:] = [item for item in items if item.get("id") != staging_item["id"]]
+        items.append(staging_item)
+        LOVELACE_REGISTRY_PATH.write_text(
+            json.dumps(registry, indent=2) + "\n", encoding="utf-8"
+        )
+
+
 def apply_safety_overrides(mode: str) -> None:
     require_staging_path(CONFIG_DIR)
     CONFIG_DIR.mkdir(parents=True, exist_ok=True)
@@ -180,6 +244,8 @@ recorder:
     if path.exists():
         path.write_text(json.dumps(document, indent=2) + "\n", encoding="utf-8")
     set_growatt_mode(mode)
+    apply_entity_safety_overrides(mode)
+    install_staging_dashboard()
 
 
 def sync(source: Path) -> None:

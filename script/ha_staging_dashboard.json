@@ -1,0 +1,209 @@
+{
+  "title": "Growatt Staging",
+  "views": [
+    {
+      "path": "overview",
+      "title": "Overview",
+      "icon": "mdi:solar-power",
+      "cards": [
+        {
+          "type": "entities",
+          "title": "Power flow",
+          "show_header_toggle": false,
+          "entities": [
+            "sensor.growatt_output_power",
+            "sensor.growatt_power_user_load",
+            "sensor.growatt_power_to_user",
+            "sensor.growatt_power_to_grid",
+            "sensor.growatt_charge_power",
+            "sensor.growatt_discharge_power",
+            "sensor.growatt_soc"
+          ]
+        },
+        {
+          "type": "history-graph",
+          "title": "Power flow history",
+          "hours_to_show": 24,
+          "entities": [
+            "sensor.growatt_output_power",
+            "sensor.growatt_power_user_load",
+            "sensor.growatt_power_to_grid",
+            "sensor.growatt_charge_power",
+            "sensor.growatt_discharge_power"
+          ]
+        },
+        {
+          "type": "entities",
+          "title": "PV / inverter",
+          "show_header_toggle": false,
+          "entities": [
+            "sensor.growatt_input_1_wattage",
+            "sensor.growatt_input_2_wattage",
+            "sensor.growatt_input_1_voltage",
+            "sensor.growatt_input_2_voltage",
+            "sensor.growatt_input_1_amperage",
+            "sensor.growatt_input_2_amperage",
+            "sensor.growatt_reactive_wattage",
+            "sensor.growatt_real_power_output_percentage"
+          ]
+        },
+        {
+          "type": "entities",
+          "title": "Communications",
+          "show_header_toggle": false,
+          "entities": [
+            "sensor.growatt_status",
+            "sensor.growatt_status_code",
+            "sensor.growatt_warning_code",
+            "sensor.growatt_fault_code"
+          ]
+        }
+      ]
+    },
+    {
+      "path": "battery",
+      "title": "Battery",
+      "icon": "mdi:battery-high",
+      "cards": [
+        {
+          "type": "entities",
+          "title": "Battery telemetry",
+          "show_header_toggle": false,
+          "entities": [
+            "sensor.growatt_soc",
+            "sensor.growatt_battery_voltage",
+            "sensor.growatt_battery_current",
+            "sensor.growatt_bms_battery_current",
+            "sensor.growatt_charge_power",
+            "sensor.growatt_discharge_power",
+            "sensor.growatt_battery_temperature_a",
+            "sensor.growatt_bms_cell_max_temperature"
+          ]
+        },
+        {
+          "type": "history-graph",
+          "title": "Battery history",
+          "hours_to_show": 24,
+          "entities": [
+            "sensor.growatt_soc",
+            "sensor.growatt_battery_current",
+            "sensor.growatt_bms_battery_current",
+            "sensor.growatt_charge_power",
+            "sensor.growatt_discharge_power"
+          ]
+        },
+        {
+          "type": "entities",
+          "title": "Validated cell-voltage extrema",
+          "show_header_toggle": false,
+          "entities": [
+            "sensor.growatt_bms_cell_voltage_min",
+            "sensor.growatt_bms_cell_voltage_max",
+            "sensor.growatt_bms_min_volt_cell_no",
+            "sensor.growatt_bms_max_volt_cell_no"
+          ]
+        },
+        {
+          "type": "entities",
+          "title": "BMS diagnostics",
+          "show_header_toggle": false,
+          "entities": [
+            "sensor.growatt_bms_status",
+            "sensor.growatt_bms_warn_1",
+            "sensor.growatt_bms_warn_2",
+            "sensor.growatt_bms_warn_3",
+            "sensor.growatt_bms_protect_1",
+            "sensor.growatt_bms_protect_2",
+            "sensor.growatt_bms_protect_3",
+            "sensor.growatt_bms_cycle_count",
+            "sensor.growatt_bms_soh"
+          ]
+        }
+      ]
+    },
+    {
+      "path": "energy",
+      "title": "Energy",
+      "icon": "mdi:counter",
+      "cards": [
+        {
+          "type": "entities",
+          "title": "Daily counters",
+          "show_header_toggle": false,
+          "entities": [
+            "sensor.growatt_energy_produced_today",
+            "sensor.growatt_energy_to_user_today",
+            "sensor.growatt_energy_to_grid_today",
+            "sensor.growatt_battery_charged_today",
+            "sensor.growatt_battery_discharged_today",
+            "sensor.growatt_input_1_energy_today",
+            "sensor.growatt_input_2_energy_today"
+          ]
+        },
+        {
+          "type": "entities",
+          "title": "Lifetime counters",
+          "show_header_toggle": false,
+          "entities": [
+            "sensor.growatt_total_energy_produced",
+            "sensor.growatt_energy_to_user_total",
+            "sensor.growatt_energy_to_grid_total",
+            "sensor.growatt_battery_charged_total",
+            "sensor.growatt_battery_discharged_total",
+            "sensor.growatt_input_1_total_energy",
+            "sensor.growatt_input_2_total_energy"
+          ]
+        },
+        {
+          "type": "history-graph",
+          "title": "Energy counters",
+          "hours_to_show": 48,
+          "entities": [
+            "sensor.growatt_total_energy_produced",
+            "sensor.growatt_energy_to_user_total",
+            "sensor.growatt_energy_to_grid_total",
+            "sensor.growatt_battery_charged_total",
+            "sensor.growatt_battery_discharged_total"
+          ]
+        }
+      ]
+    },
+    {
+      "path": "diagnostics",
+      "title": "Diagnostics",
+      "icon": "mdi:clipboard-pulse-outline",
+      "cards": [
+        {
+          "type": "entities",
+          "title": "Inverter diagnostics",
+          "show_header_toggle": false,
+          "entities": [
+            "sensor.growatt_status",
+            "sensor.growatt_status_code",
+            "sensor.growatt_derating_mode",
+            "sensor.growatt_warning_code",
+            "sensor.growatt_fault_code",
+            "sensor.growatt_temperature",
+            "sensor.growatt_intelligent_power_management_temperature",
+            "sensor.growatt_comm_board_temperature",
+            "sensor.growatt_running_hours"
+          ]
+        },
+        {
+          "type": "entities",
+          "title": "XH read-only feedback",
+          "show_header_toggle": false,
+          "entities": [
+            "sensor.zolder_growatt_current_priority",
+            "sensor.zolder_growatt_xh_schedule"
+          ]
+        },
+        {
+          "type": "markdown",
+          "title": "Read-only staging",
+          "content": "This dashboard uses the development Growatt consumer through broker `192.168.1.148:5021`, unit 1. The dashboard is read-focused; staging runtime control is explicitly armed as `HIL_CONTROL` and write entities remain available outside this dashboard."
+        }
+      ]
+    }
+  ]
+}
