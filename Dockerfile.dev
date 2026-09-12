@@ -24,6 +24,7 @@ RUN \
         git \
         cmake \
         autoconf \
+        socat \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
@@ -35,6 +36,7 @@ WORKDIR /usr/src
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
 
 USER vscode
+RUN mkdir -p /home/vscode/.ssh
 
 ENV VIRTUAL_ENV="/home/vscode/.local/ha-venv"
 # Force "uv run" to use the configured virtual environment for all commands
@@ -44,7 +46,7 @@ ENV UV_PROJECT_ENVIRONMENT=$VIRTUAL_ENV
 RUN --mount=type=bind,source=.python-version,target=.python-version \
     uv python install \
     && uv venv $VIRTUAL_ENV
-ENV PATH="$VIRTUAL_ENV/bin:$PATH"
+ENV PATH="/home/vscode/.local/bin:$VIRTUAL_ENV/bin:$PATH"
 
 # Setup hass-release
 RUN git clone --depth 1 https://github.com/home-assistant/hass-release ~/hass-release \
@@ -59,6 +61,9 @@ RUN --mount=type=bind,source=requirements.txt,target=requirements.txt \
 
 # Claude Code native install
 RUN curl -fsSL https://claude.ai/install.sh | bash
+
+# Install the custom-component test harness used by the Growatt integration.
+RUN uv pip install --prerelease=allow pytest-homeassistant-custom-component
 
 WORKDIR /workspaces
 
