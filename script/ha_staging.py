@@ -190,7 +190,7 @@ def install_staging_dashboard() -> None:
         )
 
 
-def apply_safety_overrides(mode: str) -> None:
+def apply_safety_overrides(mode: str, reset_sensitive_storage: bool = False) -> None:
     require_staging_path(CONFIG_DIR)
     CONFIG_DIR.mkdir(parents=True, exist_ok=True)
     custom_components = CONFIG_DIR / "custom_components"
@@ -203,10 +203,11 @@ def apply_safety_overrides(mode: str) -> None:
             component.unlink()
     component.symlink_to(GROWATT_SOURCE)
 
-    for relative in SENSITIVE_STORAGE:
-        path = CONFIG_DIR / relative
-        if path.exists() or path.is_symlink():
-            path.unlink()
+    if reset_sensitive_storage:
+        for relative in SENSITIVE_STORAGE:
+            path = CONFIG_DIR / relative
+            if path.exists() or path.is_symlink():
+                path.unlink()
 
     (CONFIG_DIR / "automations.yaml").write_text("[]\n", encoding="utf-8")
     (CONFIG_DIR / "scripts.yaml").write_text("{}\n", encoding="utf-8")
@@ -290,7 +291,7 @@ def sync(source: Path) -> None:
         }
     )
     write_state(state)
-    apply_safety_overrides(DEFAULT_MODE)
+    apply_safety_overrides(DEFAULT_MODE, reset_sensitive_storage=True)
     print(f"staging_config={CONFIG_DIR}")
     print(f"mode={DEFAULT_MODE}")
     print("Growatt endpoint=192.168.1.148:5021 unit=1")
