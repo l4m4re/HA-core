@@ -400,16 +400,11 @@ def stop() -> None:
     else:
         print("staging Home Assistant is not running")
     PID_PATH.unlink(missing_ok=True)
-    state = read_state()
-    if state.get("mode") == "HIL_CONTROL":
-        state["mode"] = "HIL_READ"
-        state["control_armed"] = False
-        apply_safety_overrides("HIL_READ")
-    write_state(state)
+    write_state(read_state())
 
 
 def restart() -> None:
-    """Restart staging and return to a safe mode if it was in control mode."""
+    """Restart staging while preserving the explicitly selected HIL mode."""
 
     stop()
     start()
