@@ -30,6 +30,27 @@ confirms the integration accepted both switch actions and restored the
 reported charge state and limit. Since no vehicle was connected, it does not
 verify vehicle charging or solar-only behavior.
 
+
+## Current status and rebuild checks (2026-09-18)
+
+The HA Core workspace is now on `research/ha-dev-2026.9.2-candidate`, based on official 2026.9.2. Parent commit `9974f83539b` is pushed; the Growatt and broker submodules point to their pushed commits `334319b938e` and `6902e51ed0a`. The active HA process was stopped for the in-place container rebuild. Its last persisted entity readings below are historical and are not fresh preflight values.
+
+Last stored state before shutdown:
+
+- Growatt SoC was 88% at 12:08 UTC; Growatt AC Charge was last reported off at 09:30 UTC.
+- Peblar was last reported `no_ev_connected` at 11:34 UTC. Charge was off and power was 0 W at 11:00 UTC; the limit was 6 A at 10:22 UTC and mode was `default` at 09:30 UTC.
+- `input_boolean.peblar_solar_test_armed` was still `on` at 11:50 UTC. The HA startup automation is expected to disarm it; verify this after startup before any further action.
+
+After the user runs **Dev Containers: Rebuild Container** from the HA Core VS Code window, verify:
+
+1. HA starts automatically and reports Core 2026.9.2 at `http://localhost:8123`; confirm there is only one staging HA process.
+2. Growatt and Peblar values have refreshed after startup. Confirm Peblar reports `no_ev_connected`, charge off, and 0 W; confirm Growatt AC Charge is off.
+3. Confirm `input_boolean.peblar_solar_test_armed` is off. Do not re-arm as part of rebuild verification.
+4. Check the Peblar mode and overnight schedule on fresh feedback. Restore the user's `scheduled` 02:00–06:00 baseline if needed, and record any change.
+5. Only after all freshness and state checks pass, decide with the operator whether to resume the attended solar trial. Keep the EMS planner disconnected from actuators.
+
+HA Core pytest and `prek` must not recurse into `external/`; Growatt and broker checks belong in their own repositories. The root targeted `prek` run passed. The full root `prek --all-files` run did not complete: mypy found the existing duplicate `homeassistant.util.event_type` `.py`/`.pyi` module and the broad Pylint hook was stopped after several minutes. Growatt's suite passed 99 tests; the broker suite exited successfully with `asyncio_mode=auto`.
+
 ## First test: Peblar charge-enable round trip with no vehicle connected (completed)
 
 The latest DEV EMS input snapshot at 2026-09-17 23:37:32 UTC reported Peblar `no_ev_connected`, 0 W, charge enabled, a 28 A limit, and `scheduled` mode. Peblar state, power, charge-enable, and limit reports were 9.4 seconds old; mode was 249.7 seconds old, within the six-minute limit. Growatt and Zonneplan were available; Growatt AC Charge was off and Power control on, both reported 59.7 seconds earlier. Zoe live SoC is not configured, so overall EMS input status remains incomplete; the planner is `shadow_only` and not connected to actuators. The input sensor exposes `snapshot_updated_at`; the dashboard gate requires an EMS snapshot no older than 45 seconds and each control input to meet its own age limit.
@@ -118,17 +139,20 @@ control response in both directions. Later the original rule ramped Peblar to
 20 A / about 4.5 kW; Growatt reported about 3.65 kW battery discharge, and the
 user judged import likely. The test was paused with Peblar off at a 6 A limit.
 
-After the DEV HA restart at about 09:31 UTC, the test was re-armed. At 09:34
-UTC it remained armed through a controller cycle: Growatt SoC was 89%, battery
-charge was 391 W and discharge 0 W, Growatt AC Charge was off, and Peblar was
-`suspended` at 0 W with a 6 A limit in `default` mode. Charging remains off
-until SoC rises above 90%. The new 3,500 W cap is loaded but has not yet been
-re-tested under charging. Keep the trial attended and record the next current
-changes and meter response.
-The earlier switch test at 07:20–07:22 UTC was only an entity-feedback round
-trip with no vehicle connected. It did not test EV charging or solar-following
-behavior. Keep the new test attended in DEV and record SoC, meter power, battery
-power, Peblar limit and power, and each state change.
+The 09:31–09:34 UTC controller cycle above is historical evidence only. Later
+in the session the test was stopped, the current policy was revised to a fixed
+3,500 W battery-discharge cap, and the dashboard then showed the trial armed.
+Before HA shutdown for the release rebuild, the last database states recorded
+88% Growatt SoC, Peblar `no_ev_connected`, charge off at 0 W with a 6 A limit
+in `default`, Growatt AC Charge off, and the solar-test arm helper still on.
+These state reports were not fresh at shutdown. HA is currently stopped;
+startup should disarm the trial. The cap has not yet been re-tested while
+charging, and Growatt meter direction still needs verification under a clear
+flow change. The earlier 07:20–07:22 switch test was only an entity-feedback
+round trip with no vehicle connected, so it did not validate charging or
+solar-following behavior. After the rebuild checks above, keep any resumed test
+attended and record SoC, meter power, battery power, Peblar limit and power, and
+each state change.
 
 ## Growatt tests
 
