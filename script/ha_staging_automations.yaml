@@ -18,6 +18,14 @@
       to: "on"
       id: arm
     - trigger: state
+      entity_id: sensor.peblar_ev_charger_state
+      to: suspended
+      id: ev_connected
+    - trigger: state
+      entity_id: sensor.peblar_ev_charger_state
+      to: charging
+      id: ev_charging
+    - trigger: state
       entity_id: input_boolean.peblar_solar_test_armed
       to: "off"
       id: disarm
@@ -126,6 +134,27 @@
                         message: >-
                           A Growatt or Peblar input is missing or stale. Charging
                           was stopped and the test was disarmed.
+                - conditions:
+                    - condition: state
+                      entity_id: sensor.peblar_ev_charger_state
+                      state: no_ev_connected
+                  sequence:
+                    - if:
+                        - condition: template
+                          value_template: >-
+                            {{ is_state('switch.peblar_ev_charger_charge', 'on')
+                              or is_state('input_boolean.peblar_solar_session_active', 'on') }}
+                      then:
+                        - action: switch.turn_off
+                          target:
+                            entity_id: switch.peblar_ev_charger_charge
+                        - action: input_boolean.turn_off
+                          target:
+                            entity_id: input_boolean.peblar_solar_session_active
+                        - action: logbook.log
+                          data:
+                            name: Peblar solar test
+                            message: Paused while the EV is disconnected; the test remains armed.
                 - conditions:
                     - condition: template
                       value_template: >-
