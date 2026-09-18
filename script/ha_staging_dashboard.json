@@ -1,9 +1,9 @@
 {
-  "title": "Growatt Staging",
+  "title": "Growatt DEV",
   "views": [
     {
       "path": "overview",
-      "title": "Overview",
+      "title": "Overzicht DEV",
       "icon": "mdi:solar-power",
       "cards": [
         {
@@ -200,8 +200,131 @@
         },
         {
           "type": "markdown",
-          "title": "Read-only staging",
-          "content": "This dashboard uses the development Growatt consumer through broker `192.168.1.148:5021`, unit 1. The dashboard is read-focused; staging runtime control is explicitly armed as `HIL_CONTROL` and write entities remain available outside this dashboard."
+          "title": "DEV-testomgeving met fysieke apparatuur",
+          "content": "Dit dashboard hoort bij de afzonderlijke Home Assistant DEV-instantie. Growatt gebruikt ontwikkelbroker `192.168.1.148:5021`, unit 1. Handmatige bediening stuurt opdrachten naar de echte omvormer. De batterijplanning blijft alleen-lezen en bedient geen apparaten."
+        }
+      ]
+    },
+    {
+      "path": "energy-plan",
+      "title": "Energieplan",
+      "icon": "mdi:chart-timeline-variant",
+      "cards": [
+        {
+          "type": "entities",
+          "title": "Beschikbare gegevens",
+          "show_header_toggle": false,
+          "entities": [
+            "sensor.ems_shadow_input_status",
+            "sensor.growatt_soc",
+            "sensor.zonneplan_current_quarter_hourly_electricity_tariff",
+            "sensor.ems_shadow_current_price",
+            "sensor.ems_shadow_price_moving_average_1h",
+            "sensor.ems_shadow_price_mean_24h",
+            "sensor.peblar_ev_charger_state",
+            "sensor.peblar_ev_charger_power",
+            "sensor.ems_shadow_battery_plan_status",
+            "sensor.ems_shadow_zoe_projection_status"
+          ]
+        },
+        {
+          "type": "markdown",
+          "title": "Verbindingen",
+          "content": "{% set entity = 'sensor.ems_shadow_input_status' %}\n{% set labels = {'available': 'actueel', 'stale': 'verouderd', 'unavailable': 'niet bereikbaar', 'not_configured': 'niet ingesteld', 'incomplete': 'onvolledig'} %}\n- **Growatt:** {{ labels.get(state_attr(entity, 'growatt').status, 'onbekend') }}\n- **Zonneplan:** {{ labels.get(state_attr(entity, 'zonneplan').status, 'onbekend') }}\n- **Peblar:** {{ labels.get(state_attr(entity, 'peblar').status, 'onbekend') }} · {{ state_attr(entity, 'peblar').state or 'geen status' }} · {{ state_attr(entity, 'peblar').power_w if state_attr(entity, 'peblar').power_w is not none else 'geen meting' }} W\n- **Live Zoe-accu:** {{ 'actueel' if state_attr(entity, 'zoe').live_soc_available else 'niet beschikbaar' }}"
+        },
+        {
+          "type": "history-graph",
+          "title": "Zonneplan-prijs en 1-uursgemiddelde",
+          "hours_to_show": 48,
+          "entities": [
+            "sensor.zonneplan_current_quarter_hourly_electricity_tariff",
+            "sensor.ems_shadow_price_moving_average_1h"
+          ]
+        },
+        {
+          "type": "statistics-graph",
+          "title": "All-in prijs per uur · 7 dagen",
+          "chart_type": "line",
+          "period": "hour",
+          "days_to_show": 7,
+          "stat_types": ["min", "mean", "max"],
+          "entities": [
+            {
+              "entity": "sensor.zonneplan_current_quarter_hourly_electricity_tariff",
+              "name": "Kwartierprijs"
+            }
+          ]
+        },
+        {
+          "type": "markdown",
+          "title": "Batterijadvies · voorstel",
+          "content": "{% set entity = 'sensor.ems_shadow_battery_plan_status' %}\n{% set economics = state_attr(entity, 'battery_economics') %}\n{% set assumptions = state_attr(entity, 'assumptions') %}\n{% set required = state_attr(entity, 'required_energy_kwh') | float(0) %}\n{% if states(entity) == 'no_charge_needed' %}\n**Extra laden is nu niet nodig.** De accu zit al boven de gekozen laadgrens.\n{% elif not state_attr(entity, 'valid') %}\n**Er is geen betrouwbaar batterijadvies.** Reden: {{ state_attr(entity, 'invalid_reasons') }}\n{% else %}\n**Voorgesteld:** {{ states(entity) }} · doel {{ state_attr(entity, 'target_soc') }}% · {{ required }} kWh opgeslagen energie nodig.\n{% endif %}\n\n{% if economics and state_attr(entity, 'valid') and states(entity) != 'no_charge_needed' %}\n{% set scheduled_stored = economics.stored_energy_kwh | float(0) %}\n{% set above_target = [scheduled_stored - required, 0] | max %}\n- Geraamd uit het net in de gekozen laadvensters: {{ economics.grid_energy_kwh }} kWh\n- Geraamd opgeslagen in die vensters: {{ economics.stored_energy_kwh }} kWh\n- Daarvan verlies bij laden: {{ economics.conversion_loss_kwh }} kWh\n- Modelmarge boven het doel: {{ above_target | round(2) }} kWh opgeslagen\n- Stroomkosten over de volledige vensters: €{{ economics.import_cost_eur }}\n- Aangenomen accuverbruik: €{{ economics.wear_cost_eur }}\n- Totaal: €{{ economics.total_charge_cost_eur }}\n\n**Gekozen vensters**\n{% for window in state_attr(entity, 'growatt_candidate_windows') or [] %}\n- {{ as_datetime(window.start).strftime('%a %H:%M') }}–{{ as_datetime(window.end).strftime('%H:%M') }}{% if window.approximate %} · samengevoegd om binnen het slotlimiet te blijven{% endif %}\n{% endfor %}\n\nDe kostenraming rekent met maximaal {{ ((assumptions.maximum_ac_battery_charge_power_w | float(0)) / 1000) | round(2) }} kW gedurende elk gekozen kwartier. Daardoor kan de geraamde energie boven de doelbehoefte uitkomen; de werkelijke laadstroom en eind-SoC kunnen afwijken.\n{% endif %}\n\nAannames: {{ assumptions.battery_usable_capacity_kwh if assumptions else 'onbekend' }} kWh bruikbare capaciteit, {{ assumptions.charging_efficiency if assumptions else 'onbekend' }} laadrendement en €{{ assumptions.battery_wear_cost_eur_per_kwh_stored if assumptions else 'onbekend' }}/kWh accuverbruik. Dit zijn voorlopige waarden. Dit scherm geeft alleen advies en bedient niets."
+        },
+        {
+          "type": "markdown",
+          "title": "Verwachte Zoe-lading voor vertrek",
+          "content": "{% set entity = 'sensor.ems_shadow_zoe_projection_status' %}\n{% set forecast = state_attr(entity, 'projection') %}\n{% set source = state_attr(entity, 'source') %}\n{% if source == 'replay_demo' %}\n**Demo:** er is geen live Zoe-SoC ingesteld. De start op {{ state_attr(entity, 'initial_soc_pct') }}% is een demo-aanname. Het laadtempo komt uit gemeten laadsessies. Modelzekerheid: {{ forecast.confidence if forecast else 'onbekend' }}.\n{% elif source == 'live_zoe_soc' %}\n**Live:** de voorspelling gebruikt de beschikbare Zoe-SoC. Modelzekerheid: {{ forecast.confidence if forecast else 'onbekend' }}.\n{% else %}\n**Geen Zoe-voorspelling beschikbaar.** Controleer of de Zoe-SoC is ingesteld en actueel is.\n{% endif %}\n\nDoel: {{ state_attr(entity, 'target_soc_pct') }}% voor vertrek om {{ as_datetime(state_attr(entity, 'departure')).strftime('%H:%M') }}.\n\n{% if forecast and forecast.points %}\n| Tijd | Verwachte accu | Bandbreedte |\n| --- | ---: | ---: |\n{% for point in forecast.points %}\n| {{ as_datetime(point.timestamp).strftime('%a %H:%M') }} | {{ point.soc_pct }}% | {{ point.slow_soc_pct }}–{{ point.fast_soc_pct }}% |\n{% endfor %}\n\nVerwacht klaar: {{ as_datetime(forecast.predicted_finish).strftime('%H:%M') if forecast.predicted_finish else 'doel niet bereikt in de gekozen laadvensters' }}. Geschatte stroom: {{ forecast.projected_grid_energy_kwh }} kWh.\n{% endif %}\n\n{% if not state_attr(entity, 'schedule_valid') %}\n**Laadvensters niet beschikbaar:** {{ state_attr(entity, 'schedule_reason') or 'onbekende oorzaak' }}.\n{% endif %}\n\nOnzekerheden: {{ forecast.warnings if forecast else state_attr(entity, 'schedule_reason') }}"
+        },
+        {
+          "type": "markdown",
+          "title": "Prijs en historie",
+          "content": "De 48-uursgrafiek toont opgeslagen Zonneplan-kwartierprijzen inclusief bekende belastingen en toeslagen, plus het EMS-gemiddelde over één uur. De weekgrafiek toont minimum, gemiddelde en maximum per uur uit de Zonneplan-bronstatistieken; die Recorder-historie is in DEV beschikbaar sinds 13 september 2026. De actuele EMS-gemiddelden over één en 24 uur worden coverage-aware uit de opgeslagen bronhistorie berekend. Hun eigen tijdreeks begint bij de EMS-start op 17 september; ontbrekende waarden worden niet ingevuld. De losse historische bestanden zijn nog niet samengevoegd omdat bron, eenheid en prijsbasis eerst moeten worden bevestigd."
+        }
+      ]
+    },
+    {
+      "path": "manual-dev-control",
+      "title": "Handmatige bediening DEV",
+      "icon": "mdi:hand-back-right",
+      "cards": [
+        {
+          "type": "markdown",
+          "title": "Apparatuur aangesloten op DEV",
+          "content": "**Deze knoppen bedienen apparatuur die met de DEV-instantie is verbonden.** Growatt loopt via DEV-broker `192.168.1.148:5021`, unit 1; Peblar-opdrachten gaan naar de geconfigureerde laadpaal. De solarproef heeft een aparte, standaard uitgeschakelde arm-schakelaar. Bij handmatig bewapenen wordt Peblar uit, 6 A en `default` klaargezet. De controller start pas boven 90% thuisbatterij-SoC, moduleert de stroom rond 85% en pauzeert onder 80% zodra 6 A de minimumlimiet is. Ontbrekende of verouderde meetwaarden stoppen en ontgrendelen de proef. De Growatt-meter is de regelbron; de P1-meters worden hiervoor niet gebruikt."
+        },
+        {
+          "type": "entities",
+          "title": "Peblar solarproef (DEV)",
+          "show_header_toggle": false,
+          "entities": [
+            "automation.peblar_solar_test_controller_dev",
+            "automation.restore_peblar_night_schedule_dev",
+            "input_boolean.peblar_solar_test_armed",
+            "input_boolean.peblar_solar_session_active",
+            "input_button.peblar_restore_night_schedule",
+            "sensor.zolder_growatt_last_successful_update",
+            "sensor.growatt_power_to_user",
+            "sensor.growatt_power_to_grid"
+          ]
+        },
+        {
+          "type": "markdown",
+          "title": "Growatt-status vóór bediening",
+          "content": "{% set gr = state_attr('sensor.ems_shadow_input_status', 'growatt') %}\n{% if gr %}\n{% set soc_age = (as_timestamp(now()) - as_timestamp(gr.last_reported)) | round(0) if gr.last_reported is defined else none %}\n{% set ac_age = (as_timestamp(now()) - as_timestamp(gr.ac_charge_health.last_reported)) | round(0) if gr.ac_charge_health.last_reported is defined else none %}\n{% set power_age = (as_timestamp(now()) - as_timestamp(gr.power_control_health.last_reported)) | round(0) if gr.power_control_health.last_reported is defined else none %}\n- Accu-SoC: {{ gr.status }} · {{ soc_age if soc_age is not none else 'onbekend' }} s oud\n- AC Charge: {{ gr.ac_charge or 'onbekend' }} · {{ 'actueel' if ac_age is not none and 0 <= ac_age <= 300 else 'verouderd/onbekend' }} · {{ ac_age if ac_age is not none else 'onbekend' }} s\n- Power control: {{ gr.power_control or 'onbekend' }} · {{ 'actueel' if power_age is not none and 0 <= power_age <= 300 else 'verouderd/onbekend' }} · {{ power_age if power_age is not none else 'onbekend' }} s\n{% else %}\nGrowatt-status niet beschikbaar.\n{% endif %}\n\nGebruik een Growatt-bediening alleen als de bijbehorende status actueel is. Laat **AC Charge** uit tijdens de Peblar-proef; inschakelen kan de accu vanaf het net laden. Verander **Power control** pas tijdens een afzonderlijk voorbereide test. De tijdmeting ververst iedere minuut."
+        },
+        {
+          "type": "markdown",
+          "title": "Solarlaadregeling: voorwaarden en status",
+          "content": "{% set armed = is_state('input_boolean.peblar_solar_test_armed', 'on') %}\n{% set soc = states('sensor.growatt_soc') | float(-1) %}\n{% set update = as_timestamp(states('sensor.zolder_growatt_last_successful_update'), 0) %}\n{% set age = as_timestamp(now()) - update if update else none %}\n{% set peb = states('sensor.peblar_ev_charger_state') %}\n{% set discharge = states('sensor.growatt_discharge_power') | float(0) %}\n**Controller:** {{ 'bewapend' if armed else 'uit — geen automatische laadacties' }}\n**Thuisbatterij:** {{ soc if soc >= 0 else 'onbekend' }}% · Growatt-poll {{ age | round(0) if age is not none else 'onbekend' }} s geleden\n**Peblar:** {{ peb }} · {{ states('number.peblar_ev_charger_charge_limit') }} A · {{ states('select.peblar_ev_charger_smart_charging') }}\n**Growatt-accuontlading:** {{ discharge }} W · proefgrens 3.500 W\n\nArm de proef met de schakelaar hierboven. Hij werkt alleen vrijdag t/m zondag. De automatisering zet Peblar uit, stelt 6 A in en kiest `default`. Hij start pas bij thuisbatterij-SoC **boven 90%**. Boven 85% mag de stroom met 1 A per minuut omhoog als Growatt netimport onder 100 W blijft, zodat de thuisaccu richting 85% kan ontladen. De proef hanteert een vaste accuontlaadgrens van 3.500 W en laat bij opschalen minimaal 300 W ruimte. Boven 3.500 W verlaagt hij de laadstroom. Boven 400 W import verlaagt de regeling de stroom; tussen 100 en 400 W houdt hij die vast. Export of acculaden boven 800 W kan de stroom verhogen zodra SoC minstens 85% is. Onder 85% verlaagt aanhoudende accuontlading boven 200 W de stroom. Onder 80% pauzeert Peblar op 6 A; hervatten gebeurt pas boven 90%. Onder 80% schakelt hij uit wanneer hij al op 6 A staat en blijft uit tot SoC boven 90% komt.\n\nOntbrekende/verouderde Growatt- of Peblar-inputs, geen aangesloten EV of Growatt AC Charge aan stoppen en ontgrendelen de proef. Growatt `Power to user` en `Power to grid` zijn de import/exportfeedback; de Peblar zit al in die meterstroom. De ZOE-SoC en P1-meters zijn geen invoer.\n\nZet de arm-schakelaar uit om te stoppen. Gebruik **Restore Peblar night schedule** om daarna de eerder gebruikte `scheduled`-modus en 28 A limiet terug te zetten. Tijdens de solarproef niet tegelijk de Peblar-app of een andere HA-instantie laten sturen."
+        },
+        {
+          "type": "entities",
+          "title": "Growatt-omvormer",
+          "show_header_toggle": false,
+          "entities": [
+            "switch.growatt_ac_charge",
+            "switch.growatt_power_control"
+          ]
+        },
+        {
+          "type": "entities",
+          "title": "Peblar-laadpaal",
+          "show_header_toggle": false,
+          "entities": [
+            "number.peblar_ev_charger_charge_limit",
+            "select.peblar_ev_charger_smart_charging",
+            "switch.peblar_ev_charger_charge"
+          ]
         }
       ]
     }

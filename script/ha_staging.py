@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Manage the persistent, safety-gated Home Assistant staging instance."""
+"""Manage the persistent Home Assistant staging instance."""
 
 # This is a command-line controller; its public functions are CLI subcommands.
 # ruff: noqa: D103
@@ -28,6 +28,7 @@ ENTITY_REGISTRY_PATH = CONFIG_DIR / ".storage" / "core.entity_registry"
 LOVELACE_DASHBOARD_PATH = CONFIG_DIR / ".storage" / "lovelace.dashboard_staging"
 LOVELACE_REGISTRY_PATH = CONFIG_DIR / ".storage" / "lovelace_dashboards"
 STAGING_DASHBOARD_SOURCE = REPO_ROOT / "script" / "ha_staging_dashboard.json"
+STAGING_AUTOMATIONS_SOURCE = REPO_ROOT / "script" / "ha_staging_automations.yaml"
 GROWATT_SOURCE = (
     REPO_ROOT
     / "external"
@@ -35,10 +36,16 @@ GROWATT_SOURCE = (
     / "custom_components"
     / "growatt_local"
 )
-ARM_PHRASE = "I_UNDERSTAND_REAL_HARDWARE"
-DEFAULT_MODE = "HIL_CONTROL"
-SAFE_MODE_NAMES = {"SHADOW", "HIL_READ"}
-ALL_MODES = (*sorted(SAFE_MODE_NAMES), "HIL_CONTROL")
+EMS_CONTRACT_SOURCE = (
+    REPO_ROOT / "external" / "Homeassistant-Growatt-Local-Modbus" / "ems_contract"
+)
+EMS_SHADOW_SOURCE = (
+    REPO_ROOT
+    / "external"
+    / "Homeassistant-Growatt-Local-Modbus"
+    / "custom_components"
+    / "ems_shadow"
+)
 CONTROL_DOMAINS = {
     "localtuya",
     "rpi_gpio_pwm",
@@ -76,12 +83,12 @@ def read_state() -> dict[str, Any]:
         return {
             "schema": 1,
             "config_dir": str(CONFIG_DIR),
-            "mode": DEFAULT_MODE,
-            "control_armed": True,
         }
     state = json.loads(STATE_PATH.read_text(encoding="utf-8"))
     state.pop("owner", None)
     state.pop("owner_expires_at", None)
+    state.pop("mode", None)
+    state.pop("control_armed", None)
     return state
 
 
@@ -110,7 +117,7 @@ def load_entries() -> dict[str, Any]:
     return json.loads(path.read_text(encoding="utf-8"))
 
 
-def set_growatt_mode(mode: str) -> None:
+def configure_growatt() -> None:
     path = storage_path(".storage/core.config_entries")
     if not path.exists():
         return
@@ -124,33 +131,10 @@ def set_growatt_mode(mode: str) -> None:
         data["ip_address"] = "192.168.1.148"
         data["port"] = 5021
         data["address"] = 1
-        data["inverter_power_control"] = mode == "HIL_CONTROL"
+        data["inverter_power_control"] = True
         entry["disabled_by"] = None
     if found:
         path.write_text(json.dumps(document, indent=2) + "\n", encoding="utf-8")
-
-
-def apply_entity_safety_overrides(mode: str) -> None:
-    """Apply the staging mode to Growatt write entities."""
-
-    if not ENTITY_REGISTRY_PATH.exists():
-        return
-    document = json.loads(ENTITY_REGISTRY_PATH.read_text(encoding="utf-8"))
-    changed = False
-    for entity in document.get("data", {}).get("entities", []):
-        if entity.get("platform") != "growatt_local":
-            continue
-        domain = entity.get("entity_id", "").split(".", 1)[0]
-        if domain not in {"number", "switch"}:
-            continue
-        disabled_by = None if mode == "HIL_CONTROL" else "user"
-        if entity.get("disabled_by") != disabled_by:
-            entity["disabled_by"] = disabled_by
-            changed = True
-    if changed:
-        ENTITY_REGISTRY_PATH.write_text(
-            json.dumps(document, indent=2) + "\n", encoding="utf-8"
-        )
 
 
 def install_staging_dashboard() -> None:
@@ -177,7 +161,7 @@ def install_staging_dashboard() -> None:
         "id": "dashboard_staging",
         "show_in_sidebar": True,
         "icon": "mdi:solar-power",
-        "title": "Growatt Staging",
+        "title": "Growatt DEV",
         "require_admin": False,
         "mode": "storage",
         "url_path": "growatt-staging",
@@ -190,18 +174,24 @@ def install_staging_dashboard() -> None:
         )
 
 
-def apply_safety_overrides(mode: str, reset_sensitive_storage: bool = False) -> None:
+def link_staging_component(source: Path, name: str) -> None:
+    destination = CONFIG_DIR / "custom_components" / name
+    if destination.is_symlink() or destination.exists():
+        if destination.is_dir() and not destination.is_symlink():
+            shutil.rmtree(destination)
+        else:
+            destination.unlink()
+    destination.symlink_to(source)
+
+
+def apply_staging_overrides(reset_sensitive_storage: bool = False) -> None:
     require_staging_path(CONFIG_DIR)
     CONFIG_DIR.mkdir(parents=True, exist_ok=True)
     custom_components = CONFIG_DIR / "custom_components"
     custom_components.mkdir(parents=True, exist_ok=True)
-    component = custom_components / "growatt_local"
-    if component.is_symlink() or component.exists():
-        if component.is_dir() and not component.is_symlink():
-            shutil.rmtree(component)
-        else:
-            component.unlink()
-    component.symlink_to(GROWATT_SOURCE)
+    link_staging_component(GROWATT_SOURCE, "growatt_local")
+    link_staging_component(EMS_CONTRACT_SOURCE, "ems_contract")
+    link_staging_component(EMS_SHADOW_SOURCE, "ems_shadow")
 
     if reset_sensitive_storage:
         for relative in SENSITIVE_STORAGE:
@@ -209,7 +199,10 @@ def apply_safety_overrides(mode: str, reset_sensitive_storage: bool = False) -> 
             if path.exists() or path.is_symlink():
                 path.unlink()
 
-    (CONFIG_DIR / "automations.yaml").write_text("[]\n", encoding="utf-8")
+    if STAGING_AUTOMATIONS_SOURCE.exists():
+        shutil.copy2(STAGING_AUTOMATIONS_SOURCE, CONFIG_DIR / "automations.yaml")
+    else:
+        (CONFIG_DIR / "automations.yaml").write_text("[]\n", encoding="utf-8")
     (CONFIG_DIR / "scripts.yaml").write_text("{}\n", encoding="utf-8")
     (CONFIG_DIR / "scenes.yaml").write_text("[]\n", encoding="utf-8")
     (CONFIG_DIR / "configuration.yaml").write_text(
@@ -222,14 +215,30 @@ homeassistant:
 default_config:
 frontend:
   themes: !include_dir_merge_named themes
-automation: []
+automation: !include automations.yaml
 script: []
 scene: []
 python_script:
+input_boolean:
+  peblar_solar_test_armed:
+    name: Peblar solar test armed
+    icon: mdi:solar-power
+    initial: false
+  peblar_solar_session_active:
+    name: Peblar solar session active
+    icon: mdi:ev-station
+    initial: false
+input_button:
+  peblar_restore_night_schedule:
+    name: Restore Peblar night schedule
+    icon: mdi:calendar-clock
+sensor:
+  - platform: ems_shadow
 logger:
   default: info
   logs:
     custom_components.growatt_local: debug
+    custom_components.ems_shadow: info
     pymodbus: debug
 recorder:
   purge_keep_days: 30
@@ -244,8 +253,7 @@ recorder:
     path = storage_path(".storage/core.config_entries")
     if path.exists():
         path.write_text(json.dumps(document, indent=2) + "\n", encoding="utf-8")
-    set_growatt_mode(mode)
-    apply_entity_safety_overrides(mode)
+    configure_growatt()
     install_staging_dashboard()
 
 
@@ -283,17 +291,15 @@ def sync(source: Path) -> None:
         {
             "schema": 1,
             "config_dir": str(CONFIG_DIR),
-            "mode": DEFAULT_MODE,
-            "control_armed": True,
             "source_snapshot": str(snapshot),
             "synced_from": str(source),
             "synced_at": now_iso(),
         }
     )
     write_state(state)
-    apply_safety_overrides(DEFAULT_MODE, reset_sensitive_storage=True)
+    apply_staging_overrides(reset_sensitive_storage=True)
     print(f"staging_config={CONFIG_DIR}")
-    print(f"mode={DEFAULT_MODE}")
+    print("growatt_actuator_controls=enabled")
     print("Growatt endpoint=192.168.1.148:5021 unit=1")
 
 
@@ -315,27 +321,24 @@ def validate(state: dict[str, Any]) -> None:
             raise RuntimeError(
                 "Growatt staging entry is not pinned to 192.168.1.148:5021"
             )
-        if state.get("mode") != "HIL_CONTROL" and data.get("inverter_power_control"):
-            raise RuntimeError("Growatt power control is enabled outside HIL_CONTROL")
+        if not data.get("inverter_power_control"):
+            raise RuntimeError("Growatt power control must be enabled in staging")
     if not growatt_found:
         raise RuntimeError("staging source has no growatt_local config entry")
-    if state.get("mode") == "HIL_CONTROL" and not state.get("control_armed"):
-        raise RuntimeError("HIL_CONTROL is not explicitly armed")
-
-
-def set_mode(mode: str, arm: str | None) -> None:
-    state = read_state()
-    if mode not in ALL_MODES:
-        raise RuntimeError(f"mode must be one of {', '.join(ALL_MODES)}")
-    if mode == "HIL_CONTROL" and arm != ARM_PHRASE:
-        raise RuntimeError(f"HIL_CONTROL requires --arm {ARM_PHRASE}")
-    state["mode"] = mode
-    state["control_armed"] = mode == "HIL_CONTROL"
-    write_state(state)
-    apply_safety_overrides(mode)
-    validate(state)
-    print(f"mode={mode}")
-    print(f"control_armed={state['control_armed']}")
+    for name, source in (
+        ("ems_contract", EMS_CONTRACT_SOURCE),
+        ("ems_shadow", EMS_SHADOW_SOURCE),
+    ):
+        component_path = CONFIG_DIR / "custom_components" / name
+        if (
+            not component_path.is_symlink()
+            or component_path.resolve() != source.resolve()
+        ):
+            raise RuntimeError(f"staging {name} source link is invalid")
+    if "platform: ems_shadow" not in (CONFIG_DIR / "configuration.yaml").read_text(
+        encoding="utf-8"
+    ):
+        raise RuntimeError("staging YAML does not load the EMS shadow sensors")
 
 
 def process_running() -> bool:
@@ -370,7 +373,6 @@ def start() -> None:
         cwd=REPO_ROOT,
         env={
             **os.environ,
-            "HA_STAGING_STATE_FILE": str(STATE_PATH),
             "PYTHONUNBUFFERED": "1",
         },
         stdout=log,
@@ -380,7 +382,7 @@ def start() -> None:
     PID_PATH.write_text(f"{process.pid}\n", encoding="ascii")
     print(f"pid={process.pid}")
     print("url=http://localhost:8123")
-    print(f"mode={state['mode']}")
+    print("growatt_actuator_controls=enabled")
     print(f"log={LOG_PATH}")
 
 
@@ -405,7 +407,7 @@ def stop() -> None:
 
 
 def restart() -> None:
-    """Restart staging while preserving the explicitly selected HIL mode."""
+    """Restart staging without changing its persistent configuration."""
 
     stop()
     start()
@@ -450,9 +452,6 @@ def parser() -> argparse.ArgumentParser:
     sub.add_parser("restart")
     sub.add_parser("status")
     sub.add_parser("reset-recorder")
-    mode = sub.add_parser("mode")
-    mode.add_argument("value", choices=ALL_MODES)
-    mode.add_argument("--arm")
     return ap
 
 
@@ -471,8 +470,6 @@ def main() -> int:
             status()
         elif args.command == "reset-recorder":
             reset_recorder()
-        elif args.command == "mode":
-            set_mode(args.value, args.arm)
         else:  # pragma: no cover - argparse enforces the command tree
             return fail("unknown command")
     except (
