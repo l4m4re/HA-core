@@ -59,6 +59,5 @@ types-xmltodict==1.0.1.20260518
 unidiff==1.0.0
 
 # Growatt local development requirements
-pymodbus==3.11.2
 pytest-homeassistant-custom-component
 pyserial==3.5

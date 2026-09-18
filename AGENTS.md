@@ -63,6 +63,14 @@ Make sure to run `script/bootstrap-linux-native` after cloning this repository t
 
 This repository primarily acts as the devcontainer wrapper for the Growatt and broker projects. The new git hook workflow keeps submodule changes out of commits while still preserving work as patches.
 
+## Home energy project roadmap
+
+The workspace also tracks the broader home-energy and smart-charging project across Growatt, PyCanZE EV telemetry, Peblar, Zonneplan, and the EMS automation. Read [`ROADMAP.md`](ROADMAP.md) for cross-system scope, current evidence, dependencies, and production rollout gates. Component-specific plans remain in their respective repositories.
+
+## Official Home Assistant release sync
+
+`upstream` points to official Home Assistant Core. Keep `ha-core-release` on an official release tag and advance it only with a fast-forward. Project work branches carry local commits, so rebase those onto the release tag as described in [`doc/HA-CORE-RELEASE-SYNC.md`](doc/HA-CORE-RELEASE-SYNC.md).
+
 ## Submodule patch workflow
 
 - The `script/bootstrap-linux-native` script installs a `pre-commit` hook that runs `script/submodule-pre-commit.sh`.

@@ -29,6 +29,8 @@
   "runArgs": [
     "-e",
     "GIT_EDITOR=code --wait",
+    "--dns",
+    "192.168.1.1",
     "--security-opt",
     "label=disable"
   ],

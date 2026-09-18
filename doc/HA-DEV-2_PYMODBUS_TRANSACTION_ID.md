@@ -201,8 +201,8 @@ post-fix acceptance result.
 
 ## Asynchronous physical-stream gap
 
-The broker's current `Downstream.transact` drains `ser.in_waiting` and clears
-the framer buffer before sending a request. Consequently the current 5700
+The broker's current `Downstream.transact` drains the serial port's
+`in_waiting` property and clears the framer buffer before sending a request. Consequently the current 5700
 sniff stream cannot prove that unsolicited ShineWiFi/internal frames were
 absent: such bytes may be discarded before classification. The analyzer's
 zero CRC/drop/unknown counts must not be reported as “zero unsolicited
