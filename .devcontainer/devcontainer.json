@@ -5,7 +5,7 @@
     "context": ".."
   },
   "postCreateCommand": "git config --global --add safe.directory ${containerWorkspaceFolder} && script/setup",
-  "postStartCommand": "script/bootstrap",
+  "postStartCommand": "script/bootstrap && python3 script/ha_staging.py start",
   "containerEnv": {
     "PYTHONASYNCIODEBUG": "1",
     "SSH_AUTH_SOCK": "/tmp/ssh-agent"

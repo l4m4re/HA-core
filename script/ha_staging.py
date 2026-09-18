@@ -346,17 +346,32 @@ def process_running() -> bool:
         return False
     try:
         pid = int(PID_PATH.read_text(encoding="ascii"))
-        os.kill(pid, 0)
     except OSError, ValueError:
         return False
-    return True
+    try:
+        arguments = Path(f"/proc/{pid}/cmdline").read_bytes().split(b"\0")
+        module_index = arguments.index(b"-m")
+        config_index = arguments.index(b"--config")
+    except OSError, ValueError:
+        return False
+    return (
+        module_index + 1 < len(arguments)
+        and arguments[module_index + 1] == b"homeassistant"
+        and config_index + 1 < len(arguments)
+        and Path(os.fsdecode(arguments[config_index + 1])).resolve()
+        == CONFIG_DIR.resolve()
+    )
 
 
 def start() -> None:
     state = read_state()
     validate(state)
     if process_running():
-        raise RuntimeError("staging Home Assistant is already running")
+        pid = PID_PATH.read_text(encoding="ascii").strip()
+        print(f"already_running_pid={pid}")
+        print("url=http://localhost:8123")
+        return
+    PID_PATH.unlink(missing_ok=True)
     STAGING_ROOT.mkdir(parents=True, exist_ok=True)
     log = LOG_PATH.open("a", encoding="utf-8")
     process = subprocess.Popen(
@@ -391,11 +406,14 @@ def stop() -> None:
     if PID_PATH.exists():
         try:
             pid = int(PID_PATH.read_text(encoding="ascii"))
-            os.kill(pid, signal.SIGTERM)
-            print(f"stopping pid={pid}")
         except (OSError, ValueError) as exc:
-            print(f"staging process already stopped: {exc}")
-        if pid is not None:
+            print(f"removing invalid staging pid file: {exc}")
+        else:
+            if process_running():
+                os.kill(pid, signal.SIGTERM)
+                print(f"stopping pid={pid}")
+            else:
+                print(f"removing stale staging pid file for pid={pid}")
             for _ in range(30):
                 if not process_running():
                     break
