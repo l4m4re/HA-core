@@ -2,11 +2,12 @@
 
 The official Home Assistant Core repository is configured as the `upstream`
 remote. The `ha-core-release` branch is a clean pointer to the current official
-release. Keep local project changes on a separate `research/` branch.
+release. Keep project changes on a `research/` branch and use the current
+working directory for release updates.
 
-The project branch cannot itself fast-forward to an official release because it
-contains project-specific commits. The release pointer can fast-forward, then
-the project branch can be rebased onto that release.
+The project branch contains project-specific commits, so it cannot fast-forward
+to an official release. Advance the clean release pointer, then rebase the
+project branch onto that release in this same working directory.
 
 ## Advance to a new release
 
@@ -17,30 +18,32 @@ git fetch upstream --tags
 git tag --sort=-version:refname --list '20*' | head
 ```
 
-Use a separate worktree for the clean release branch, so an in-progress
-development checkout stays untouched:
+Finish or commit current work, then update and publish the clean release
+pointer:
 
 ```bash
-git worktree add ../HA-core-release ha-core-release
-git -C ../HA-core-release merge --ff-only 2026.9.3
+git switch ha-core-release
+git merge --ff-only 2026.9.3
+git push origin ha-core-release
 ```
 
-Create a new project branch in a separate worktree and rebase it onto the new
-release. The existing project branch remains available for comparison:
+Rebase the project branch onto the new release and publish the updated branch
+to the project origin:
 
 ```bash
-git worktree add -b research/ha-dev-2026.9.3 ../HA-core-release-sync research/ha-dev-2026.9.2-candidate
-git -C ../HA-core-release-sync rebase --onto 2026.9.3 2026.9.2
+git switch research/ha-dev-2026.9.2-candidate
+git rebase --onto 2026.9.3 2026.9.2
+git push --force-with-lease origin research/ha-dev-2026.9.2-candidate
 ```
 
-Review the rebase result and resolve conflicts before changing the active
-development worktree. Do not force-push a rewritten branch that others use.
+Resolve and review conflicts before pushing. Keep Growatt and broker changes as
+commits in their own repositories; update their gitlinks in this repository.
+Do not store or apply submodule patch files here.
 
 ## Current baseline
 
 As of 2026-09-18, `ha-core-release` points at Home Assistant Core 2026.9.2
-(`33c3e0cca60e73a8c4970ee677d75b8bc6464cdf`). The local development candidate
-`research/ha-dev-2026.9.2-candidate` was replayed on that baseline. HA Core
-application source and tests have no project-specific changes; local changes
-are in the devcontainer wrapper, staging tools, project documentation, and
-external submodule patches.
+(`33c3e0cca60e73a8c4970ee677d75b8bc6464cdf`). The active development branch is
+`research/ha-dev-2026.9.2-candidate`. HA Core application source and tests have
+no project-specific changes; local changes are in the devcontainer wrapper,
+staging tools, project documentation, and the Growatt and broker submodules.

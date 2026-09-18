@@ -5,8 +5,10 @@ repos:
       - id: ruff-check
         args:
           - --fix
+        exclude: ^external/
       - id: ruff-format
         files: ^((homeassistant|pylint|script|tests)/.+)?[^/]+\.(py|pyi)$
+        exclude: ^external/
   - repo: https://github.com/codespell-project/codespell
     rev: v2.4.3
     hooks:
@@ -16,21 +18,22 @@ repos:
           - --skip="./.*,*.csv,*.json,*.ambr"
           - --quiet-level=2
         exclude_types: [csv, json, html]
-        exclude: ^tests/fixtures/|homeassistant/generated/|tests/components/.*/snapshots/|^submodule-patches/.*\.patch$
+        exclude: ^external/|^tests/fixtures/|homeassistant/generated/|tests/components/.*/snapshots/
   - repo: https://github.com/zizmorcore/zizmor-pre-commit
     rev: v1.29.0
     hooks:
       - id: zizmor
         args:
           - --pedantic
-        exclude: ^\.github/workflows/.*\.lock\.yml$
+        exclude: ^external/|^\.github/workflows/.*\.lock\.yml$
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v6.0.0
     hooks:
       - id: check-executables-have-shebangs
         stages: [manual]
+        exclude: ^external/
       - id: check-json
-        exclude: (.vscode|.devcontainer)
+        exclude: ^external/|(.vscode|.devcontainer)
       - id: no-commit-to-branch
         args:
           - --branch=dev
@@ -40,6 +43,7 @@ repos:
     rev: v1.38.0
     hooks:
       - id: yamllint
+        exclude: ^external/
   - repo: https://github.com/rbubley/mirrors-prettier
     rev: v3.6.2
     hooks:
@@ -47,7 +51,7 @@ repos:
         additional_dependencies:
           - prettier@3.6.2
           - prettier-plugin-sort-json@4.2.0
-        exclude: ^\.github/workflows/.*\.lock\.yml$
+        exclude: ^external/|^\.github/workflows/.*\.lock\.yml$
   - repo: https://github.com/cdce8p/python-typing-update
     rev: v0.6.0
     hooks:

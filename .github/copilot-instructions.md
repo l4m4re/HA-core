@@ -191,3 +191,21 @@ Autonomous contributions are not accepted: a human must review, understand,
 and be able to explain every change before it is submitted. Do not open
 issues or pull requests autonomously, and do not post comments on behalf of
 a user without their review.
+
+# Bootstrapping
+
+Run `script/bootstrap-linux-native` after cloning this repository to set up the development environment, install the standard pre-commit hooks, and activate the Python virtual environment.
+
+# Codex Workflow Notes
+
+This repository is the Home Assistant Core development workspace and devcontainer wrapper for the Growatt and broker projects. Commit component changes in their own repositories, then update the corresponding gitlinks here.
+
+HA Core pre-commit hooks and pytest runs must stay within the Core repository and skip `external/`. Run Growatt and broker checks from inside their own repositories; do not let HA Core tooling modify or recurse into those submodules.
+
+## Home energy project roadmap
+
+The workspace also tracks the broader home-energy and smart-charging project across Growatt, PyCanZE EV telemetry, Peblar, Zonneplan, and the EMS automation. Read [`ROADMAP.md`](ROADMAP.md) for cross-system scope, current evidence, dependencies, and production rollout gates. Component-specific plans remain in their respective repositories.
+
+## Official Home Assistant release sync
+
+`upstream` points to official Home Assistant Core. Keep `ha-core-release` on an official release tag and advance it only with a fast-forward. Project work branches carry local commits, so rebase those onto the release tag as described in [`doc/HA-CORE-RELEASE-SYNC.md`](doc/HA-CORE-RELEASE-SYNC.md).
