@@ -14,9 +14,9 @@ This repository contains the core of Home Assistant, a Python 3 based home autom
 ## Development Commands
 
 - Run "python3" in current virtual environment to ensure the correct Python version is used for testing.
-- When entering a new environment or worktree, run `script/setup` to set up the virtual environment with all development dependencies (pylint, pre-commit hooks, etc.). This is required before committing. If uv reports that no download was found for the required Python version, the environment is running an outdated version of uv; upgrade it with `curl -LsSf https://astral.sh/uv/install.sh | sh` and run `script/setup` again.
+- When entering a new environment or worktree, run `script/setup` to set up the virtual environment and development dependencies. This checkout is primarily a staging environment for testing the integrations under `external/` against the stable HA Core release; Core pre-commit hooks are not installed by default. If uv reports that no download was found for the required Python version, the environment is running an outdated version of uv; upgrade it with `curl -LsSf https://astral.sh/uv/install.sh | sh` and run `script/setup` again.
 - .vscode/tasks.json contains useful commands used for development.
-- The full Core `prek` check is opt-in. Run `uv run --no-sync prek run --all-files` when preparing a PR to `home-assistant/core`; routine workspace work does not install or run the hook automatically. Set `HA_INSTALL_PREK_HOOKS=1` before `script/setup` when the local hook is needed.
+- The full Core `prek` check is opt-in. Run `uv run --no-sync prek run --all-files` only when preparing a PR to `home-assistant/core`; routine integration staging and testing does not install or run the hook automatically. Set `HA_INSTALL_PREK_HOOKS=1` before `script/setup` when the local hook is needed.
 
 ## Python Syntax Notes
 
@@ -57,13 +57,13 @@ a user without their review.
 
 # Bootstrapping
 
-Run `script/bootstrap-linux-native` after cloning this repository to set up the development environment, install the standard pre-commit hooks, and activate the Python virtual environment.
+Run `script/bootstrap-linux-native` after cloning this repository to set up the development environment and activate the Python virtual environment. It leaves Core pre-commit hooks disabled unless `HA_INSTALL_PREK_HOOKS=1` is set.
 
 # Codex Workflow Notes
 
 This repository is the Home Assistant Core development workspace and devcontainer wrapper for the Growatt and broker projects. Commit component changes in their own repositories, then update the corresponding gitlinks here.
 
-HA Core pre-commit hooks and pytest runs must stay within the Core repository and skip `external/`. Run Growatt and broker checks from inside their own repositories; do not let HA Core tooling modify or recurse into those submodules.
+HA Core pre-commit hooks and pytest runs must stay within the Core repository and skip `external/`. Run Growatt and broker checks from inside their own repositories; do not let HA Core tooling modify or recurse into those submodules. The normal goal is testing these integrations against the checked-out stable HA Core release. Enable the full Core check only for an upstream PR.
 
 ## Home energy project roadmap
 
