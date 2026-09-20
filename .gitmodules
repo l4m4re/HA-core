@@ -9,3 +9,7 @@
 [submodule "external/OpenInverterGateway"]
 	path = external/OpenInverterGateway
 	url = https://github.com/OpenInverterGateway/OpenInverterGateway.git
+[submodule "external/home-energy-manager"]
+	path = external/home-energy-manager
+	url = https://github.com/l4m4re/home-energy-manager.git
+	pushurl = git@github.com:l4m4re/home-energy-manager.git
