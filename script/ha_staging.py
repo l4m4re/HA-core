@@ -36,16 +36,9 @@ GROWATT_SOURCE = (
     / "custom_components"
     / "growatt_local"
 )
-EMS_CONTRACT_SOURCE = (
-    REPO_ROOT / "external" / "Homeassistant-Growatt-Local-Modbus" / "ems_contract"
-)
-EMS_SHADOW_SOURCE = (
-    REPO_ROOT
-    / "external"
-    / "Homeassistant-Growatt-Local-Modbus"
-    / "custom_components"
-    / "ems_shadow"
-)
+EMS_PROJECT_ROOT = REPO_ROOT / "external" / "home-energy-manager"
+EMS_CONTRACT_SOURCE = EMS_PROJECT_ROOT / "ems_contract"
+EMS_SHADOW_SOURCE = EMS_PROJECT_ROOT / "custom_components" / "ems_shadow"
 CONTROL_DOMAINS = {
     "localtuya",
     "rpi_gpio_pwm",

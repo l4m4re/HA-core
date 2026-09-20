@@ -1,0 +1,334 @@
+{
+  "schema": "ha-8c-live-input-inventory-v1",
+  "captured_at": "2026-09-06T15:09:56Z",
+  "safety": {
+    "read_only": true,
+    "growatt_writes": 0,
+    "ha_mutating_services": 0,
+    "ev_controls": 0,
+    "production_configuration_changed": false
+  },
+  "environments": {
+    "production_home_assistant": {
+      "role": "stable_entity_and_recorder_observer",
+      "host": "192.168.1.148",
+      "home_assistant_version": "2025.9.3"
+    },
+    "development_hil": {
+      "role": "read_only_hil_harness",
+      "broker": "192.168.1.148:5021",
+      "unit": 1,
+      "device": "MIN 6000TL-XH",
+      "branch": "research/ha-8c-live-input-validation-20260906",
+      "head": "e98a871d6029fe5567595846dd7651a9042dcaba"
+    }
+  },
+  "snapshot": {
+    "observed_at": "2026-09-06T15:08:36Z",
+    "growatt_feedback": {
+      "observed_at": "2026-09-06T15:06:14.064672Z",
+      "current_priority": {
+        "register": "I3144",
+        "raw_value": 0,
+        "mode": "load_first",
+        "valid": true,
+        "samples": [0, 0, 0]
+      },
+      "schedule_registers": {
+        "3038": 14080,
+        "3039": 5947,
+        "3040": 40960,
+        "3041": 1792,
+        "3042": 8192,
+        "3043": 1083,
+        "3044": 0,
+        "3045": 0,
+        "3050": 0,
+        "3051": 0,
+        "3052": 0,
+        "3053": 0,
+        "3054": 0,
+        "3055": 0,
+        "3056": 0,
+        "3057": 0,
+        "3058": 0,
+        "3059": 0
+      },
+      "schedule_samples": 3,
+      "native_transactions": [
+        {
+          "table": "holding",
+          "function": "FC03",
+          "start": 3000,
+          "count": 125,
+          "request_count": 3,
+          "response_count": 3,
+          "returned_words": 125,
+          "crc_failures": 0,
+          "timeouts": 0,
+          "retries": 0,
+          "repeatable": true
+        },
+        {
+          "table": "input",
+          "function": "FC04",
+          "start": 3125,
+          "count": 125,
+          "request_count": 3,
+          "response_count": 3,
+          "returned_words": 125,
+          "crc_failures": 0,
+          "timeouts": 0,
+          "retries": 0,
+          "repeatable": true
+        }
+      ],
+      "capture": {
+        "temporary_path": "/tmp/growatt-ha8c-20260906-150531.jsonl",
+        "lines": 22,
+        "dev_client": "TCP:192.168.1.139:38652",
+        "dev_filtered_frames": 12,
+        "dev_filtered_requests": 6,
+        "dev_filtered_responses": 6,
+        "time_range": "2026-09-06T15:06:05.240Z/2026-09-06T15:06:14.062Z",
+        "analyzers": [
+          "growatt-rtu-broker/tools/analyze_sniff_log.py",
+          "growatt-rtu-broker/tools/parse_live_log.py"
+        ],
+        "analysis": {
+          "crc_failures": 0,
+          "timeouts": 0,
+          "drops": 0,
+          "combined_frame_suspects": 0
+        }
+      }
+    },
+    "growatt_telemetry": {
+      "observed_at": "2026-09-06T15:08:24.778Z",
+      "telemetry_valid": true,
+      "grid_import_power_w": null,
+      "grid_export_power_w": 0.0,
+      "house_load_power_w": 3801.1,
+      "pv_power_w": 1087.2,
+      "battery_power_w": 142.0,
+      "battery_power_convention": "positive_discharge; charge is a separate positive entity",
+      "battery_soc_pct": 10.0
+    }
+  },
+  "production_instantaneous_entities": [
+    {
+      "entity_id": "sensor.growatt_input_1_wattage",
+      "unique_id": "growatt_local_SNL0CGV020_input_1_power",
+      "platform": "growatt_local",
+      "device_class": "power",
+      "state_class": null,
+      "unit": "W",
+      "value": 605.7,
+      "last_updated": "2026-09-06T15:08:24.77557Z",
+      "physical_quantity": "PV input 1 power",
+      "sign_convention": "positive generation",
+      "source_register": "FC04 I3005-I3006"
+    },
+    {
+      "entity_id": "sensor.growatt_input_2_wattage",
+      "unique_id": "growatt_local_SNL0CGV020_input_2_power",
+      "platform": "growatt_local",
+      "device_class": "power",
+      "state_class": null,
+      "unit": "W",
+      "value": 481.5,
+      "last_updated": "2026-09-06T15:08:24.77208Z",
+      "physical_quantity": "PV input 2 power",
+      "sign_convention": "positive generation",
+      "source_register": "FC04 I3009-I3010"
+    },
+    {
+      "entity_id": "sensor.growatt_internal_wattage",
+      "unique_id": "growatt_local_SNL0CGV020_input_power",
+      "platform": "growatt_local",
+      "device_class": "power",
+      "state_class": null,
+      "unit": "W",
+      "value": 1087.2,
+      "last_updated": "2026-09-06T15:08:24.77811Z",
+      "physical_quantity": "PV total power",
+      "sign_convention": "positive generation",
+      "source_register": "FC04 I3001-I3002"
+    },
+    {
+      "entity_id": "sensor.growatt_power_user_load",
+      "unique_id": "growatt_local_SNL0CGV020_power_user_load",
+      "platform": "growatt_local",
+      "device_class": "power",
+      "state_class": null,
+      "unit": "W",
+      "value": 3801.1,
+      "last_updated": "2026-09-06T15:08:24.76939Z",
+      "physical_quantity": "on-site load power",
+      "sign_convention": "positive consumption",
+      "source_register": "FC04 I3045-I3046"
+    },
+    {
+      "entity_id": "sensor.growatt_power_to_user",
+      "unique_id": "growatt_local_SNL0CGV020_power_to_user",
+      "platform": "growatt_local",
+      "device_class": "power",
+      "state_class": null,
+      "unit": "W",
+      "value": 2573.9,
+      "last_updated": "2026-09-06T15:08:24.77069Z",
+      "physical_quantity": "inverter power delivered to user/load",
+      "sign_convention": "positive inverter-to-load",
+      "source_register": "FC04 I3041-I3042"
+    },
+    {
+      "entity_id": "sensor.growatt_power_to_grid",
+      "unique_id": "growatt_local_SNL0CGV020_power_to_grid",
+      "platform": "growatt_local",
+      "device_class": "power",
+      "state_class": null,
+      "unit": "W",
+      "value": 0.0,
+      "last_updated": "2026-09-06T15:02:56.78891Z",
+      "physical_quantity": "grid export power",
+      "sign_convention": "positive export from inverter",
+      "source_register": "FC04 I3043-I3044"
+    },
+    {
+      "entity_id": "sensor.growatt_charge_power",
+      "unique_id": "growatt_local_SNL0CGV020_charge_power",
+      "platform": "growatt_local",
+      "device_class": "power",
+      "state_class": null,
+      "unit": "W",
+      "value": 0.0,
+      "last_updated": "2026-09-06T12:08:11.80594Z",
+      "physical_quantity": "battery charging power",
+      "sign_convention": "positive charging; stale zero must not be treated as fresh",
+      "source_register": "FC04 I3180-I3181"
+    },
+    {
+      "entity_id": "sensor.growatt_discharge_power",
+      "unique_id": "growatt_local_SNL0CGV020_discharge_power",
+      "platform": "growatt_local",
+      "device_class": "power",
+      "state_class": null,
+      "unit": "W",
+      "value": 142.0,
+      "last_updated": "2026-09-06T15:08:24.77491Z",
+      "physical_quantity": "battery discharging power",
+      "sign_convention": "positive discharging",
+      "source_register": "FC04 I3178-I3179"
+    },
+    {
+      "entity_id": "sensor.growatt_soc",
+      "unique_id": "growatt_local_SNL0CGV020_soc",
+      "platform": "growatt_local",
+      "device_class": "battery",
+      "state_class": null,
+      "unit": "%",
+      "value": 10.0,
+      "last_updated": "2026-09-06T15:04:00.79912Z",
+      "physical_quantity": "battery state of charge",
+      "sign_convention": "percentage",
+      "source_register": "FC04 I3171"
+    },
+    {
+      "entity_id": "sensor.p1_power_consumption_actual_total",
+      "unique_id": "p1-pt",
+      "platform": "rest",
+      "device_class": "power",
+      "state_class": null,
+      "unit": "kW",
+      "value": 2.54,
+      "last_updated": "2026-09-06T15:08:36.45112Z",
+      "physical_quantity": "P1 billing-point import power",
+      "sign_convention": "positive import/consumption",
+      "source_register": "P1 REST payload"
+    },
+    {
+      "entity_id": "sensor.p1_power_returned_actual_total",
+      "unique_id": "p1-prt",
+      "platform": "rest",
+      "device_class": "power",
+      "state_class": null,
+      "unit": "kW",
+      "value": 0.0,
+      "last_updated": "2026-09-06T15:04:06.42108Z",
+      "physical_quantity": "P1 billing-point export power",
+      "sign_convention": "positive export/returned energy direction",
+      "source_register": "P1 REST payload"
+    },
+    {
+      "entity_id": "sensor.p1_power_consumption_phase_1",
+      "unique_id": "p1-p1",
+      "platform": "rest",
+      "device_class": "power",
+      "state_class": null,
+      "unit": "kW",
+      "value": 2.54,
+      "last_updated": "2026-09-06T15:08:36.45112Z",
+      "physical_quantity": "P1 phase-1 import power",
+      "sign_convention": "positive import/consumption",
+      "source_register": "P1 REST payload"
+    },
+    {
+      "entity_id": "sensor.p1_current_phase_1",
+      "unique_id": "p1-a1",
+      "platform": "rest",
+      "device_class": "current",
+      "state_class": null,
+      "unit": "A",
+      "value": 12.0,
+      "last_updated": "2026-09-06T15:08:06.44667Z",
+      "physical_quantity": "P1 phase-1 current",
+      "sign_convention": "meter-reported phase current",
+      "source_register": "P1 REST payload"
+    }
+  ],
+  "p1_freshness": {
+    "lastupdate_entity": "sensor.p1_lastupdate",
+    "lastupdate": "2026-09-06T15:08:16+00:00",
+    "observed_interval_seconds": 10,
+    "role": "billing/grid-point reference; not assumed to be the DDSU666",
+    "voltage_entity": null,
+    "net_signed_entity": null
+  },
+  "energy_dashboard_contract": {
+    "status": "unchanged",
+    "statistics_meta_source": "recorder",
+    "entities": [
+      {"entity_id": "sensor.growatt_input_1_total_energy", "unique_id": "growatt_local_SNL0CGV020_input_1_energy_total", "unit": "kWh", "device_class": "energy", "state_class": "total_increasing", "value": 7867.9, "source_register": "FC04 I3057-I3058"},
+      {"entity_id": "sensor.growatt_input_2_total_energy", "unique_id": "growatt_local_SNL0CGV020_input_2_energy_total", "unit": "kWh", "device_class": "energy", "state_class": "total_increasing", "value": 11705.0, "source_register": "FC04 I3061-I3062"},
+      {"entity_id": "sensor.growatt_battery_discharged_total", "unique_id": "growatt_local_SNL0CGV020_discharge_energy_total", "unit": "kWh", "device_class": "energy", "state_class": "total_increasing", "value": 3220.0, "source_register": "FC04 I3127-I3128"},
+      {"entity_id": "sensor.growatt_battery_charged_total", "unique_id": "growatt_local_SNL0CGV020_charge_energy_total", "unit": "kWh", "device_class": "energy", "state_class": "total_increasing", "value": 3357.6, "source_register": "FC04 I3131-I3132"},
+      {"entity_id": "sensor.growatt_energy_to_user_today", "unique_id": "growatt_local_SNL0CGV020_energy_to_user_today", "unit": "kWh", "device_class": "energy", "state_class": "total_increasing", "value": 2.1, "source_register": "FC04 I3067-I3068"}
+    ],
+    "migration": "none"
+  },
+  "providers": {
+    "zonneplan": {"status": "NOT_CONFIGURED", "config_entry": false, "entities": []},
+    "price": {"status": "NOT_CONFIGURED", "entities": []},
+    "peblar": {"status": "NOT_CONFIGURED", "config_entry": false, "entities": []},
+    "zoe": {"status": "partial", "entities": ["sensor.zoef_energy", "sensor.zoef_power"], "soc": "UNAVAILABLE"}
+  },
+  "external_meter": {
+    "meter_model": "CHINT DDSU666",
+    "inverter_support": "confirmed by Growatt MIN 2500-6000TL-XH documentation",
+    "settings": [
+      {"register": "H122", "raw_value": 0, "decoded_value": "disabled", "classification": "PROVEN_EXTERNAL_METER_SETTING", "meaning": "export-limit enable/method; vendor map says 1=RS-485 meter, 2=RS-232 meter, 3=CT", "source_evidence": ["V1.24 holding register 122", "resolved reference holding 122"], "live_observation": "accepted in FC03 H0+125"},
+      {"register": "H180", "raw_value": 1, "decoded_value": "meter link/detected", "classification": "PROVEN_EXTERNAL_METER_SETTING", "meaning": "vendor MeterLink; normalized reference describes external meter link status", "source_evidence": ["V1.24 holding register 180", "resolved reference holding 180"], "live_observation": "accepted by direct FC03 H180 count 1; repeatability not established"},
+      {"register": "H533", "raw_value": 1, "decoded_value": "Meter", "classification": "PROVEN_EXTERNAL_METER_SETTING", "meaning": "anti-backflow equipment selection; vendor says 1=Meter and 3=CT", "source_evidence": ["V1.24 holding register 533", "resolved reference holding 533"], "live_observation": "accepted by direct FC03 H533 count 1; repeatability not established"},
+      {"register": "H22", "raw_value": 1, "decoded_value": "38400 bps", "classification": "NOT_METER_SETTING", "meaning": "generic inverter Modbus RTU baud selection", "source_evidence": ["V1.24 holding register 22"], "live_observation": "accepted in FC03 H0+125"},
+      {"register": "H30", "raw_value": 1, "decoded_value": "inverter address 1", "classification": "NOT_METER_SETTING", "meaning": "generic inverter Modbus slave address", "source_evidence": ["V1.24 holding register 30"], "live_observation": "accepted in FC03 H0+125"},
+      {"register": "H3085", "raw_value": 0, "decoded_value": "not interpreted", "classification": "NOT_METER_SETTING", "meaning": "BDC/battery communication address region", "source_evidence": ["V1.24 holding register 3085 explicitly appears in BDC region"], "live_observation": "accepted in FC03 H3000+125"},
+      {"register": "H3086", "raw_value": 0, "decoded_value": "not interpreted", "classification": "NOT_METER_SETTING", "meaning": "BDC/battery communication baud region", "source_evidence": ["V1.24 holding register 3086 explicitly appears in BDC region"], "live_observation": "accepted in FC03 H3000+125"}
+    ],
+    "unresolved": ["external meter type register", "DDSU666 slave address", "DDSU666 serial baud/framing", "dedicated meter health payload"],
+    "passive_sniff_plan": {
+      "topology": "inverter sole master -> DDSU666 slave; RPi USB-RS485 receive-only observer",
+      "must_establish": ["serial baud/framing", "meter slave address", "function codes", "polled ranges", "request cadence", "response payloads"],
+      "prohibitions": ["no second Modbus master", "no transmitted frame from RPi", "no meter writes", "no inverter writes"]
+    }
+  }
+}

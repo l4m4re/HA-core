@@ -1,0 +1,58 @@
+{
+  "generated_at": "2026-09-06T15:09:56+00:00",
+  "valid": true,
+  "mode": "cheap_charge",
+  "reason_codes": ["lowest_available_price"],
+  "current_soc": "10.0",
+  "reserve_soc": "10",
+  "target_soc": "80",
+  "required_energy_kwh": "7.0",
+  "estimated_grid_energy_kwh": "7.608695652173913043478260870",
+  "estimated_charging_duration_hours": "2.536231884057971014492753623",
+  "compression_extra_cost_eur": "0",
+  "compression_added_interval_count": 0,
+  "selected_cheap_intervals": [
+    {
+      "start": "2026-09-06T19:00:00+02:00",
+      "end": "2026-09-06T21:45:00+02:00",
+      "count": 11
+    }
+  ],
+  "economic_windows": [
+    {
+      "start": "2026-09-06T19:00:00+02:00",
+      "end": "2026-09-06T21:45:00+02:00",
+      "approximate": false
+    }
+  ],
+  "growatt_candidate_windows": [
+    {
+      "start": "2026-09-06T19:00:00+02:00",
+      "end": "2026-09-06T21:45:00+02:00",
+      "priority": "battery_first"
+    }
+  ],
+  "actual_current_priority": {
+    "raw_value": 0,
+    "mode": "load_first",
+    "valid": true
+  },
+  "actual_schedule": {
+    "slot_1": {"raw_start": 14080, "raw_end": 5947, "enabled": false},
+    "slot_2": {"raw_start": 40960, "raw_end": 1792, "enabled": true},
+    "slot_3": {"raw_start": 8192, "raw_end": 1083, "enabled": false}
+  },
+  "hypothetical_schedule_diff": {
+    "changed_slots": [1, 2, 3],
+    "skipped_no_change_slots": [4, 5, 6, 7, 8, 9],
+    "hypothetical_write_count": 3
+  },
+  "boundary_semantics_unvalidated": true,
+  "export_optimization_enabled": false,
+  "warnings": [],
+  "actuators": {
+    "growatt_writes": 0,
+    "peblar_commands": 0,
+    "zoe_commands": 0
+  }
+}

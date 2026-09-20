@@ -1,0 +1,34 @@
+{
+  "timezone": "Europe/Amsterdam",
+  "retrieved_at": "2026-09-06T15:08:30+00:00",
+  "entity": {
+    "entity_id": "sensor.zonneplan_current_quarter_hourly_electricity_tariff",
+    "state": "0.10",
+    "attributes": {
+      "forecast": [
+        {"start_date": "2026-09-06T17:00:00+02:00", "end_date": "2026-09-06T17:15:00+02:00", "price_tax_included": {"amount": 3000000}, "price_tax_excluded": {"amount": 2500000}},
+        {"start_date": "2026-09-06T17:15:00+02:00", "end_date": "2026-09-06T17:30:00+02:00", "price_tax_included": {"amount": 3000000}, "price_tax_excluded": {"amount": 2500000}},
+        {"start_date": "2026-09-06T17:30:00+02:00", "end_date": "2026-09-06T17:45:00+02:00", "price_tax_included": {"amount": 2900000}, "price_tax_excluded": {"amount": 2400000}},
+        {"start_date": "2026-09-06T17:45:00+02:00", "end_date": "2026-09-06T18:00:00+02:00", "price_tax_included": {"amount": 3100000}, "price_tax_excluded": {"amount": 2600000}},
+        {"start_date": "2026-09-06T18:00:00+02:00", "end_date": "2026-09-06T18:15:00+02:00", "price_tax_included": {"amount": 2800000}, "price_tax_excluded": {"amount": 2300000}},
+        {"start_date": "2026-09-06T18:15:00+02:00", "end_date": "2026-09-06T18:30:00+02:00", "price_tax_included": {"amount": 2700000}, "price_tax_excluded": {"amount": 2200000}},
+        {"start_date": "2026-09-06T18:30:00+02:00", "end_date": "2026-09-06T18:45:00+02:00", "price_tax_included": {"amount": 3300000}, "price_tax_excluded": {"amount": 2800000}},
+        {"start_date": "2026-09-06T18:45:00+02:00", "end_date": "2026-09-06T19:00:00+02:00", "price_tax_included": {"amount": 3200000}, "price_tax_excluded": {"amount": 2700000}},
+        {"start_date": "2026-09-06T19:00:00+02:00", "end_date": "2026-09-06T19:15:00+02:00", "price_tax_included": {"amount": 1000000}, "price_tax_excluded": {"amount": 500000}},
+        {"start_date": "2026-09-06T19:15:00+02:00", "end_date": "2026-09-06T19:30:00+02:00", "price_tax_included": {"amount": 1100000}, "price_tax_excluded": {"amount": 600000}},
+        {"start_date": "2026-09-06T19:30:00+02:00", "end_date": "2026-09-06T19:45:00+02:00", "price_tax_included": {"amount": 1200000}, "price_tax_excluded": {"amount": 700000}},
+        {"start_date": "2026-09-06T19:45:00+02:00", "end_date": "2026-09-06T20:00:00+02:00", "price_tax_included": {"amount": 1300000}, "price_tax_excluded": {"amount": 800000}},
+        {"start_date": "2026-09-06T20:00:00+02:00", "end_date": "2026-09-06T20:15:00+02:00", "price_tax_included": {"amount": 1400000}, "price_tax_excluded": {"amount": 900000}},
+        {"start_date": "2026-09-06T20:15:00+02:00", "end_date": "2026-09-06T20:30:00+02:00", "price_tax_included": {"amount": 1500000}, "price_tax_excluded": {"amount": 1000000}},
+        {"start_date": "2026-09-06T20:30:00+02:00", "end_date": "2026-09-06T20:45:00+02:00", "price_tax_included": {"amount": 1600000}, "price_tax_excluded": {"amount": 1100000}},
+        {"start_date": "2026-09-06T20:45:00+02:00", "end_date": "2026-09-06T21:00:00+02:00", "price_tax_included": {"amount": 1700000}, "price_tax_excluded": {"amount": 1200000}},
+        {"start_date": "2026-09-06T21:00:00+02:00", "end_date": "2026-09-06T21:15:00+02:00", "price_tax_included": {"amount": 1800000}, "price_tax_excluded": {"amount": 1300000}},
+        {"start_date": "2026-09-06T21:15:00+02:00", "end_date": "2026-09-06T21:30:00+02:00", "price_tax_included": {"amount": 1900000}, "price_tax_excluded": {"amount": 1400000}},
+        {"start_date": "2026-09-06T21:30:00+02:00", "end_date": "2026-09-06T21:45:00+02:00", "price_tax_included": {"amount": 2000000}, "price_tax_excluded": {"amount": 1500000}},
+        {"start_date": "2026-09-06T21:45:00+02:00", "end_date": "2026-09-06T22:00:00+02:00", "price_tax_included": {"amount": 2100000}, "price_tax_excluded": {"amount": 1600000}},
+        {"start_date": "2026-09-06T22:00:00+02:00", "end_date": "2026-09-06T22:15:00+02:00", "price_tax_included": {"amount": 3500000}, "price_tax_excluded": {"amount": 3000000}},
+        {"start_date": "2026-09-06T22:15:00+02:00", "end_date": "2026-09-06T22:30:00+02:00", "price_tax_included": {"amount": 3600000}, "price_tax_excluded": {"amount": 3100000}}
+      ]
+    }
+  }
+}
