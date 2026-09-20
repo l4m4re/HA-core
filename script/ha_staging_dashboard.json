@@ -221,11 +221,41 @@
             "sensor.ems_shadow_current_price",
             "sensor.ems_shadow_price_moving_average_1h",
             "sensor.ems_shadow_price_mean_24h",
+            {
+              "entity": "sensor.energy_production_today_3",
+              "name": "Zonproductie vandaag · west"
+            },
+            {
+              "entity": "sensor.energy_production_today_4",
+              "name": "Zonproductie vandaag · oost"
+            },
+            {
+              "entity": "sensor.energy_production_today_remaining_3",
+              "name": "Resterende zonproductie vandaag · west"
+            },
+            {
+              "entity": "sensor.energy_production_today_remaining_4",
+              "name": "Resterende zonproductie vandaag · oost"
+            },
+            {
+              "entity": "sensor.energy_production_tomorrow_3",
+              "name": "Zonproductie morgen · west"
+            },
+            {
+              "entity": "sensor.energy_production_tomorrow_4",
+              "name": "Zonproductie morgen · oost"
+            },
             "sensor.peblar_ev_charger_state",
             "sensor.peblar_ev_charger_power",
             "sensor.ems_shadow_battery_plan_status",
+            "sensor.ems_shadow_growatt_daytime_charge_status",
             "sensor.ems_shadow_zoe_projection_status"
           ]
+        },
+        {
+          "type": "markdown",
+          "title": "Zonproductieprognose",
+          "content": "{% set today_west = states('sensor.energy_production_today_3') %}\n{% set today_east = states('sensor.energy_production_today_4') %}\n{% set tomorrow_west = states('sensor.energy_production_tomorrow_3') %}\n{% set tomorrow_east = states('sensor.energy_production_tomorrow_4') %}\n{% if has_value('sensor.energy_production_today_3') and has_value('sensor.energy_production_today_4') %}\n- **Vandaag:** {{ (today_west | float + today_east | float) | round(2) }} kWh (west {{ today_west }} + oost {{ today_east }})\n{% else %}\n- **Vandaag:** prognose niet volledig beschikbaar\n{% endif %}\n{% if has_value('sensor.energy_production_tomorrow_3') and has_value('sensor.energy_production_tomorrow_4') %}\n- **Morgen:** {{ (tomorrow_west | float + tomorrow_east | float) | round(2) }} kWh (west {{ tomorrow_west }} + oost {{ tomorrow_east }})\n{% else %}\n- **Morgen:** prognose niet volledig beschikbaar\n{% endif %}\n\nBron: Forecast.Solar, met de twee bestaande dakvlakken uit de stagingconfiguratie. Deze waarden zijn een invoer voor het energieplan; de Growatt-planner schrijft nog niets naar de omvormer."
         },
         {
           "type": "markdown",
@@ -254,6 +284,11 @@
               "name": "Kwartierprijs"
             }
           ]
+        },
+        {
+          "type": "markdown",
+          "title": "Growatt-plannertest · alleen-lezen",
+          "content": "{% set entity = 'sensor.ems_shadow_growatt_daytime_charge_status' %}\n{% set selected = state_attr(entity, 'selected') %}\n{% set policy = state_attr(entity, 'policy') %}\n**Status:** `{{ states(entity) }}` · vaste sleuf {{ policy.fixed_slot if policy else '?' }}\n\n{% if selected and selected.valid %}\n- **Laadvenster:** {{ as_datetime(selected.start).strftime('%d-%m %H:%M') }}–{{ as_datetime(selected.end).strftime('%H:%M') }}\n- **Huidige SOC:** {{ selected.current_soc_pct }}% → **doel:** {{ selected.target_soc_pct }}%\n- **Benodigd uit net (model):** {{ selected.required_grid_energy_kwh | round(2) }} kWh in {{ selected.interval_count }} kwartieren\n- **Levenscyclus:** {{ 'bevroren tot einde slot' if state_attr(entity, 'frozen') else 'voorlopig' }}\n{% else %}\nEr past nu geen aaneengesloten laadvenster binnen de goedkope uren. Reden: `{{ selected.reason if selected else 'geen kandidaat' }}`.\n{% endif %}\n\n- **Voorgestelde schrijfactie:** {{ 'ja' if state_attr(entity, 'write_required') else 'nee' }}\n- **Fysieke Growatt-write uitgevoerd:** nee\n- **Dure exportstaart na het venster:** {{ (selected.high_export_intervals | length) if selected else 0 }} kwartieren\n\nDe test wordt elke 15 minuten opnieuw berekend zolang het slot voorlopig is. Zodra het binnen de schrijfvoorlooptijd komt, wordt het slot vastgezet tot het einde; de uitvoerder is nog niet aangesloten."
         },
         {
           "type": "markdown",
