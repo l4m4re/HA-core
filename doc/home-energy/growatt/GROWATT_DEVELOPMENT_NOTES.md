@@ -14,7 +14,11 @@ Before adding broad register or sensor coverage, complete the reviewed register-
 ## Implementation boundaries
 
 - The integration may connect by serial, TCP, or UDP. A TCP broker can be an external bridge; it is not an integration runtime dependency and must not be started by this repository.
-- Use the isolated Modbus simulator and static fixtures described in [`testing/README.md`](../../../external/Homeassistant-Growatt-Local-Modbus/testing/README.md) for repository-local dry runs. Any live DEV broker/HIL access remains outside the integration runtime and must be explicitly bounded and documented.
+- Run the focused integration tests and direct register reader described in
+  [`testing/README.md`](../../../external/Homeassistant-Growatt-Local-Modbus/testing/README.md).
+  The Modbus simulator and static fixtures are owned by the sibling broker
+  project; any live DEV broker/HIL access remains outside the integration
+  runtime and must be explicitly bounded and documented.
 - The physical Modbus serial link has one master at a time. Do not run direct-serial HA polling alongside the broker polling the same inverter.
 - Setup, reconfiguration, commissioning dashboards, and sensor discovery must remain read-only. Do not issue inverter writes as part of connection tests or sensor selection.
 - Keep device identity based on the inverter serial number. A transport change must not silently repoint an existing config entry to a different inverter.
