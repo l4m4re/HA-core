@@ -221,6 +221,14 @@ input_boolean:
     name: Peblar solar session active
     icon: mdi:ev-station
     initial: false
+  growatt_tou_write_test_armed:
+    name: Growatt TOU planner write test armed
+    icon: mdi:battery-clock
+    initial: false
+  growatt_tou_write_test_done:
+    name: Growatt TOU planner write test done
+    icon: mdi:check-circle-outline
+    initial: false
 input_button:
   peblar_restore_night_schedule:
     name: Restore Peblar night schedule

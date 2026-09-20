@@ -396,3 +396,88 @@
       data:
         name: Peblar solar test
         message: Restored scheduled mode and 28 A charging limit.
+
+- id: growatt_tou_planner_write_test_dev
+  alias: Growatt TOU planner write test (DEV)
+  description: >-
+    One-shot staging-only bridge from the read-only planner result to the
+    existing Growatt HA TOU controls. It is armed explicitly and writes only
+    the selected fixed slot.
+  mode: single
+  triggers:
+    - trigger: state
+      entity_id: input_boolean.growatt_tou_write_test_armed
+      to: "on"
+      id: arm
+  conditions:
+    - condition: state
+      entity_id: input_boolean.growatt_tou_write_test_armed
+      state: "on"
+    - condition: state
+      entity_id: input_boolean.growatt_tou_write_test_done
+      state: "off"
+    - condition: state
+      entity_id: sensor.ems_shadow_growatt_daytime_charge_status
+      state: commit_window_reached
+    - condition: template
+      value_template: >-
+        {% set plan = state_attr('sensor.ems_shadow_growatt_daytime_charge_status', 'selected') %}
+        {{ plan is mapping and plan.valid and plan.slot == 1
+           and plan.start is not none and plan.end is not none }}
+  actions:
+    - if:
+        - condition: template
+          value_template: >-
+            {{ states('time.zolder_growatt_tou_1_start') !=
+               as_datetime(state_attr('sensor.ems_shadow_growatt_daytime_charge_status', 'selected').start).strftime('%H:%M:%S') }}
+      then:
+        - action: time.set_value
+          continue_on_error: true
+          target:
+            entity_id: time.zolder_growatt_tou_1_start
+          data:
+            time: >-
+              {{ as_datetime(state_attr('sensor.ems_shadow_growatt_daytime_charge_status', 'selected').start).strftime('%H:%M:%S') }}
+    - if:
+        - condition: template
+          value_template: >-
+            {{ states('time.zolder_growatt_tou_1_end') !=
+               as_datetime(state_attr('sensor.ems_shadow_growatt_daytime_charge_status', 'selected').end).strftime('%H:%M:%S') }}
+      then:
+        - action: time.set_value
+          continue_on_error: true
+          target:
+            entity_id: time.zolder_growatt_tou_1_end
+          data:
+            time: >-
+              {{ as_datetime(state_attr('sensor.ems_shadow_growatt_daytime_charge_status', 'selected').end).strftime('%H:%M:%S') }}
+    - if:
+        - condition: template
+          value_template: "{{ states('select.zolder_growatt_tou_1_priority') != 'battery_first' }}"
+      then:
+        - action: select.select_option
+          continue_on_error: true
+          target:
+            entity_id: select.zolder_growatt_tou_1_priority
+          data:
+            option: battery_first
+    - if:
+        - condition: state
+          entity_id: switch.zolder_growatt_tou_1_enabled
+          state: "off"
+      then:
+        - action: switch.turn_on
+          continue_on_error: true
+          target:
+            entity_id: switch.zolder_growatt_tou_1_enabled
+    - action: input_boolean.turn_on
+      target:
+        entity_id: input_boolean.growatt_tou_write_test_done
+    - action: logbook.log
+      data:
+        name: Growatt TOU planner
+        message: >-
+          Wrote planner slot 1 via HA controls:
+          {{ state_attr('sensor.ems_shadow_growatt_daytime_charge_status', 'selected').start }}
+          to
+          {{ state_attr('sensor.ems_shadow_growatt_daytime_charge_status', 'selected').end }}.
