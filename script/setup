@@ -31,7 +31,11 @@ fi
 
 script/bootstrap
 
-prek install
+if [[ "${HA_INSTALL_PREK_HOOKS:-0}" == "1" ]]; then
+  prek install
+else
+  echo "Skipping automatic prek hook installation (set HA_INSTALL_PREK_HOOKS=1 for an upstream PR)."
+fi
 
 hass --script ensure_config -c config
 

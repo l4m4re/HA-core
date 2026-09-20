@@ -286,6 +286,14 @@ jobs:
       contents: read
     needs: [info]
     if: |
+      (
+        github.event_name == 'workflow_dispatch'
+        || (
+          github.event_name == 'pull_request'
+          && github.event.pull_request.base.repo.full_name == 'home-assistant/core'
+        )
+      )
+      &&
       github.event.inputs.pylint-only != 'true'
       && github.event.inputs.mypy-only != 'true'
       && github.event.inputs.audit-licenses-only != 'true'

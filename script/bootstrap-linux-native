@@ -131,9 +131,11 @@ if [[ -f requirements_test_pre_commit.txt ]]; then
   uv pip install -r requirements_test_pre_commit.txt || true
 fi
 
-if command -v pre-commit >/dev/null 2>&1; then
+if [[ "${HA_INSTALL_PREK_HOOKS:-0}" == "1" ]] && command -v pre-commit >/dev/null 2>&1; then
   log "Installing standard pre-commit hooks..."
   pre-commit install || true
+else
+  log "Skipping automatic pre-commit hook installation (set HA_INSTALL_PREK_HOOKS=1 for an upstream PR)."
 fi
 
 log "Bootstrap complete. Active environment: $(python -c 'import sys; print(sys.executable)')"
