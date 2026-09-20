@@ -59,3 +59,26 @@ EMS files must stay outside that pull request. The expected upstream content
 is the runtime integration, its focused tests, and documentation needed to use
 or review those changes. Simulator infrastructure remains in the broker
 repository.
+
+## Remaining branch-only inventory
+
+Against the fetched `upstream/master`, 24 tracked files remain in the
+integration branch:
+
+- Runtime additions: `custom_components/growatt_local/API/__init__.py`,
+  `ems_types.py`, `select.py`, `time.py`, and `tou.py`.
+- Integration documentation and developer entry points: `doc/README.md`,
+  `testing/README.md`, `testing/read_registers.py`, `pytest.ini`,
+  `requirements_dev.txt`, and `.github/workflows/ci.yml`.
+- Focused tests: `tests/conftest.py`, `tests/test_config_flow.py`,
+  `tests/test_growatt_api_read_write.py`, `tests/test_ha5_regressions.py`,
+  `tests/test_ha_gii2_decoder.py`, `tests/test_ha_gii3_metadata.py`,
+  `tests/test_native_block_polling.py`, `tests/test_sensor.py`,
+  `tests/test_sensor_key_uniqueness.py`, `tests/test_status_semantics.py`,
+  `tests/test_tou_controls.py`, `tests/test_unique_sensor_ids.py`, and
+  `tests/__init__.py`.
+
+These files are the remaining candidates for an upstream review. The first
+group changes runtime behavior; the latter groups make that behavior
+reproducible and reviewable. No simulator, register-research corpus, EMS
+project code, or HIL report remains in the integration repository.
