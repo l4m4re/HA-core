@@ -161,8 +161,7 @@
                         {{ states('sensor.growatt_soc') | float(-1) < 0
                           or states('sensor.growatt_soc') | float(-1) > 100
                           or states('sensor.peblar_ev_charger_state') not in ['suspended', 'charging']
-                          or not is_state('switch.growatt_ac_charge', 'off')
-                          or now().weekday() not in [4, 5, 6] }}
+                          or not is_state('switch.growatt_ac_charge', 'off') }}
                   sequence:
                     - action: switch.turn_off
                       target:
@@ -179,8 +178,8 @@
                         title: Peblar solar test stopped
                         message: >-
                           The EV, battery SoC, or Growatt AC-charge precondition
-                          is not safe, or this solar trial is outside Friday through
-                          Sunday. Charging was stopped and the test was disarmed.
+                          is not safe. Charging was stopped and the test was
+                          disarmed.
                 - conditions:
                     - condition: state
                       entity_id: switch.peblar_ev_charger_charge
