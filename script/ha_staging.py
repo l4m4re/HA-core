@@ -229,6 +229,15 @@ input_boolean:
     name: Growatt TOU planner write test done
     icon: mdi:check-circle-outline
     initial: false
+input_number:
+  peblar_solar_battery_target_soc:
+    name: Peblar solar battery target SoC
+    icon: mdi:battery-high
+    min: 5
+    max: 95
+    step: 1
+    mode: slider
+    initial: 90
 input_button:
   peblar_restore_night_schedule:
     name: Restore Peblar night schedule

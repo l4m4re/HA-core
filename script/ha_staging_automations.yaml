@@ -210,7 +210,9 @@
                             option: default
                     - if:
                         - condition: template
-                          value_template: "{{ states('sensor.growatt_soc') | float(0) > 90 }}"
+                          value_template: >-
+                            {{ states('sensor.growatt_soc') | float(0) >
+                              (states('input_number.peblar_solar_battery_target_soc') | float(90)) + 5 }}
                       then:
                         - action: switch.turn_on
                           target:
@@ -244,7 +246,9 @@
                         option: default
                     - if:
                         - condition: template
-                          value_template: "{{ states('sensor.growatt_soc') | float(0) > 90 }}"
+                          value_template: >-
+                            {{ states('sensor.growatt_soc') | float(0) >
+                              (states('input_number.peblar_solar_battery_target_soc') | float(90)) + 5 }}
                       then:
                         - action: switch.turn_on
                           target:
@@ -278,7 +282,9 @@
                         option: default
                     - if:
                         - condition: template
-                          value_template: "{{ states('sensor.growatt_soc') | float(0) > 90 }}"
+                          value_template: >-
+                            {{ states('sensor.growatt_soc') | float(0) >
+                              (states('input_number.peblar_solar_battery_target_soc') | float(90)) + 5 }}
                       then:
                         - action: switch.turn_on
                           target:
@@ -292,7 +298,8 @@
                       state: "on"
                     - condition: template
                       value_template: >-
-                        {{ states('sensor.growatt_soc') | float(0) < 80
+                        {{ states('sensor.growatt_soc') | float(0) <
+                          (states('input_number.peblar_solar_battery_target_soc') | float(90)) - 5
                           and states('number.peblar_ev_charger_charge_limit') | float(6) > 6 }}
                   sequence:
                     - action: number.set_value
@@ -306,9 +313,10 @@
                       state: "on"
                     - condition: template
                       value_template: >-
+                        {% set target_soc = states('input_number.peblar_solar_battery_target_soc') | float(90) %}
                         {% set soc = states('sensor.growatt_soc') | float(0) %}
                         {% set limit = states('number.peblar_ev_charger_charge_limit') | float(6) %}
-                        {{ soc < 80 and limit <= 6 }}
+                        {{ soc < target_soc - 5 and limit <= 6 }}
                   sequence:
                     - action: switch.turn_off
                       target:
@@ -319,20 +327,23 @@
                     - action: logbook.log
                       data:
                         name: Peblar solar test
-                        message: Battery fell below 80% at the 6 A minimum; charging paused.
+                        message: >-
+                          Battery fell more than 5 percentage points below the
+                          solar target at the 6 A minimum; charging paused.
                 - conditions:
                     - condition: state
                       entity_id: switch.peblar_ev_charger_charge
                       state: "on"
                     - condition: template
                       value_template: >-
+                        {% set target_soc = states('input_number.peblar_solar_battery_target_soc') | float(90) %}
                         {% set limit = states('number.peblar_ev_charger_charge_limit') | float(6) %}
                         {% set import_w = states('sensor.growatt_power_to_user') | float(0) %}
                         {% set soc = states('sensor.growatt_soc') | float(0) %}
                         {% set discharge_w = states('sensor.growatt_discharge_power') | float(0) %}
                         {{ limit > 6 and (import_w > 400
                           or discharge_w > max_battery_discharge_w
-                          or (soc <= 85 and discharge_w > 200)) }}
+                          or (soc <= target_soc and discharge_w > 200)) }}
                   sequence:
                     - action: number.set_value
                       target:
@@ -345,6 +356,7 @@
                       state: "on"
                     - condition: template
                       value_template: >-
+                        {% set target_soc = states('input_number.peblar_solar_battery_target_soc') | float(90) %}
                         {% set soc = states('sensor.growatt_soc') | float(0) %}
                         {% set export_w = states('sensor.growatt_power_to_grid') | float(0) %}
                         {% set import_w = states('sensor.growatt_power_to_user') | float(0) %}
@@ -354,8 +366,8 @@
                         {% set max_limit = state_attr('number.peblar_ev_charger_charge_limit', 'max') | float(0) %}
                         {{ limit < max_limit
                           and discharge_w + battery_discharge_ramp_margin_w < max_battery_discharge_w and (
-                          (soc > 85 and import_w < 100)
-                          or (soc >= 85 and (export_w > 800 or charge_w > 800))
+                          (soc > target_soc and import_w < 100)
+                          or (soc >= target_soc and (export_w > 800 or charge_w > 800))
                         ) }}
                   sequence:
                     - action: number.set_value
