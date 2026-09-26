@@ -36,6 +36,13 @@ GROWATT_SOURCE = (
     / "custom_components"
     / "growatt_local"
 )
+GROWATT_MODBUS_SOURCE = (
+    REPO_ROOT
+    / "external"
+    / "Growatt_ModbusTCP"
+    / "custom_components"
+    / "growatt_modbus"
+)
 EMS_PROJECT_ROOT = REPO_ROOT / "external" / "home-energy-manager"
 EMS_CONTRACT_SOURCE = EMS_PROJECT_ROOT / "ems_contract"
 EMS_SHADOW_SOURCE = EMS_PROJECT_ROOT / "custom_components" / "ems_shadow"
@@ -183,6 +190,7 @@ def apply_staging_overrides(reset_sensitive_storage: bool = False) -> None:
     custom_components = CONFIG_DIR / "custom_components"
     custom_components.mkdir(parents=True, exist_ok=True)
     link_staging_component(GROWATT_SOURCE, "growatt_local")
+    link_staging_component(GROWATT_MODBUS_SOURCE, "growatt_modbus")
     link_staging_component(EMS_CONTRACT_SOURCE, "ems_contract")
     link_staging_component(EMS_SHADOW_SOURCE, "ems_shadow")
 
@@ -336,6 +344,7 @@ def validate(state: dict[str, Any]) -> None:
     if not growatt_found:
         raise RuntimeError("staging source has no growatt_local config entry")
     for name, source in (
+        ("growatt_modbus", GROWATT_MODBUS_SOURCE),
         ("ems_contract", EMS_CONTRACT_SOURCE),
         ("ems_shadow", EMS_SHADOW_SOURCE),
     ):
