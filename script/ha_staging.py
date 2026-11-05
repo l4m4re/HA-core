@@ -246,6 +246,13 @@ input_number:
     step: 1
     mode: slider
     initial: 90
+input_text:
+  peblar_solar_relay_switch_history:
+    name: Peblar solar relay switch history
+    icon: mdi:swap-vertical
+    max: 255
+    mode: text
+    initial: ""
 input_button:
   peblar_restore_night_schedule:
     name: Restore Peblar night schedule

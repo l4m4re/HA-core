@@ -1,14 +1,97 @@
+- id: peblar_solar_relay_switch_history_dev
+  alias: Peblar solar relay switch history (DEV)
+  description: Keep a persistent rolling history of actual Peblar charge relay state changes.
+  mode: queued
+  max: 5
+  variables:
+    relay_window_s: 900
+  triggers:
+    - trigger: state
+      entity_id: switch.peblar_ev_charger_charge
+      to: "on"
+    - trigger: state
+      entity_id: switch.peblar_ev_charger_charge
+      to: "off"
+  conditions:
+    - condition: template
+      value_template: >-
+        {{ trigger.from_state is not none
+          and trigger.to_state is not none
+          and trigger.from_state.state in ['on', 'off']
+          and trigger.to_state.state in ['on', 'off']
+          and trigger.from_state.state != trigger.to_state.state }}
+  actions:
+    - action: input_text.set_value
+      target:
+        entity_id: input_text.peblar_solar_relay_switch_history
+      data:
+        value: >-
+          {% set cutoff = as_timestamp(now()) | int(0) - relay_window_s %}
+          {% set history = states('input_text.peblar_solar_relay_switch_history') %}
+          {% set kept = namespace(values=[]) %}
+          {% for raw_timestamp in history.split(',') %}
+            {% set timestamp = raw_timestamp | trim | int(0) %}
+            {% if timestamp >= cutoff %}
+              {% set kept.values = kept.values + [timestamp] %}
+            {% endif %}
+          {% endfor %}
+          {% set kept.values = kept.values + [as_timestamp(now()) | int(0)] %}
+          {{ kept.values | join(',') }}
+
+- id: peblar_solar_test_anchor_target_dev
+  alias: Peblar solar test anchor target (DEV)
+  description: Anchor the solar test battery target to the current Growatt SOC when armed.
+  mode: single
+  triggers:
+    - trigger: homeassistant
+      event: start
+    - trigger: state
+      entity_id: input_boolean.peblar_solar_test_armed
+      to: "on"
+  conditions:
+    - condition: state
+      entity_id: input_boolean.peblar_solar_test_armed
+      state: "on"
+    - condition: template
+      value_template: >-
+        {{ is_number(states('sensor.growatt_tcp_canary_battery_battery_soc'))
+          and 0 <= states('sensor.growatt_tcp_canary_battery_battery_soc') | float(-1) <= 100 }}
+  actions:
+    - action: input_number.set_value
+      target:
+        entity_id: input_number.peblar_solar_battery_target_soc
+      data:
+        value: >-
+          {% set soc = states('sensor.growatt_tcp_canary_battery_battery_soc') | float(0) %}
+          {{ [95, [5, soc] | max] | min | round(0) }}
+    - action: logbook.log
+      data:
+        name: Peblar solar test
+        message: >-
+          Solar control anchored its target to the current Growatt SOC when the
+          test was armed.
+
 - id: peblar_solar_test_controller_dev
   alias: Peblar solar test controller (DEV)
   description: >-
-    Disarmed by default. Uses live Growatt meter flow and battery SoC to
-    control the physical DEV Peblar in direct mode. Missing or stale inputs
-    stop and disarm the test.
+    The slow loop starts on sustained grid export and stops on the SOC target;
+    the minute loop trims Peblar current against a SOC-dependent battery power
+    target.
+    Arming anchors the target to the current SoC once. Stale inputs stop
+    charging without disarming the test; transient unavailable values within
+    the freshness window are tolerated.
   mode: single
   max_exceeded: silent
   variables:
-    max_battery_discharge_w: 3500
-    battery_discharge_ramp_margin_w: 300
+    min_peblar_charge_a: 6
+    battery_balance_gain: 0.5
+    soc_target_battery_power_w: 500
+    soc_target_band_pct: 1
+    grid_power_threshold_w: 100
+    growatt_max_age_s: 120
+    relay_min_state_s: 600
+    relay_window_s: 900
+    relay_max_switches: 2
   triggers:
     - trigger: homeassistant
       event: start
@@ -38,10 +121,7 @@
             - condition: trigger
               id: startup
           sequence:
-            - delay: "00:00:30"
-            - action: input_boolean.turn_off
-              target:
-                entity_id: input_boolean.peblar_solar_test_armed
+            - delay: "00:01:00"
             - action: input_boolean.turn_off
               target:
                 entity_id: input_boolean.peblar_solar_session_active
@@ -89,34 +169,30 @@
             - action: homeassistant.update_entity
               target:
                 entity_id:
-                  - sensor.zolder_growatt_last_successful_update
-                  - sensor.growatt_soc
-                  - sensor.growatt_power_to_user
-                  - sensor.growatt_power_to_grid
-                  - sensor.growatt_charge_power
-                  - sensor.growatt_discharge_power
-                  - switch.growatt_ac_charge
                   - sensor.peblar_ev_charger_state
                   - sensor.peblar_ev_charger_power
                   - switch.peblar_ev_charger_charge
                   - number.peblar_ev_charger_charge_limit
                   - select.peblar_ev_charger_smart_charging
+                  - sensor.growatt_tcp_canary_grid_grid_export_power
+                  - sensor.growatt_tcp_canary_battery_battery_soc
+                  - sensor.growatt_tcp_canary_battery_battery_charge_power
+                  - sensor.growatt_tcp_canary_battery_battery_discharge_power
             - delay: "00:00:02"
             - choose:
                 - conditions:
                     - condition: template
                       value_template: >-
-                        {% set t = as_timestamp(states('sensor.zolder_growatt_last_successful_update'), 0) %}
+                        {% set t = as_timestamp(states('sensor.growatt_tcp_canary_last_update'), 0) %}
                         {% set n = as_timestamp(now()) %}
-                        {{ t == 0 or n - t < 0 or n - t > 15
-                          or not is_number(states('sensor.growatt_soc'))
-                          or not is_number(states('sensor.growatt_power_to_user'))
-                          or not is_number(states('sensor.growatt_power_to_grid'))
-                          or not is_number(states('sensor.growatt_charge_power'))
-                          or not is_number(states('sensor.growatt_discharge_power'))
+                        {{ t == 0 or n - t < 0 or n - t > growatt_max_age_s
                           or not is_number(states('number.peblar_ev_charger_charge_limit'))
                           or states('sensor.peblar_ev_charger_state') in ['unknown', 'unavailable', 'none']
-                          or states('select.peblar_ev_charger_smart_charging') in ['unknown', 'unavailable', 'none'] }}
+                          or states('select.peblar_ev_charger_smart_charging') in ['unknown', 'unavailable', 'none']
+                          or not is_number(states('sensor.growatt_tcp_canary_grid_grid_export_power'))
+                          or not is_number(states('sensor.growatt_tcp_canary_battery_battery_soc'))
+                          or not is_number(states('sensor.growatt_tcp_canary_battery_battery_charge_power'))
+                          or not is_number(states('sensor.growatt_tcp_canary_battery_battery_discharge_power')) }}
                   sequence:
                     - action: switch.turn_off
                       target:
@@ -124,16 +200,13 @@
                     - action: input_boolean.turn_off
                       target:
                         entity_id: input_boolean.peblar_solar_session_active
-                    - action: input_boolean.turn_off
-                      target:
-                        entity_id: input_boolean.peblar_solar_test_armed
                     - action: persistent_notification.create
                       data:
                         notification_id: peblar_solar_test_stopped
                         title: Peblar solar test stopped
                         message: >-
                           A Growatt or Peblar input is missing or stale. Charging
-                          was stopped and the test was disarmed.
+                          was stopped; the test remains armed.
                 - conditions:
                     - condition: state
                       entity_id: sensor.peblar_ev_charger_state
@@ -156,12 +229,25 @@
                             name: Peblar solar test
                             message: Paused while the EV is disconnected; the test remains armed.
                 - conditions:
+                    - condition: state
+                      entity_id: switch.peblar_ev_charger_charge
+                      state: "on"
                     - condition: template
                       value_template: >-
-                        {{ states('sensor.growatt_soc') | float(-1) < 0
-                          or states('sensor.growatt_soc') | float(-1) > 100
-                          or states('sensor.peblar_ev_charger_state') not in ['suspended', 'charging']
-                          or not is_state('switch.growatt_ac_charge', 'off') }}
+                        {% set soc = states('sensor.growatt_tcp_canary_battery_battery_soc') | float(-1) %}
+                        {% set target = states('input_number.peblar_solar_battery_target_soc') | float(90) %}
+                        {% set on_for_s = as_timestamp(now()) - as_timestamp(states.switch.peblar_ev_charger_charge.last_changed, 0) %}
+                        {% set cutoff = as_timestamp(now()) | int(0) - relay_window_s %}
+                        {% set recent_switches = namespace(count=0) %}
+                        {% for raw_timestamp in states('input_text.peblar_solar_relay_switch_history').split(',') %}
+                          {% if raw_timestamp | trim | int(0) >= cutoff %}
+                            {% set recent_switches.count = recent_switches.count + 1 %}
+                          {% endif %}
+                        {% endfor %}
+                        {{ on_for_s >= 300
+                          and on_for_s >= relay_min_state_s
+                          and recent_switches.count < relay_max_switches
+                          and soc <= target - soc_target_band_pct }}
                   sequence:
                     - action: switch.turn_off
                       target:
@@ -169,17 +255,38 @@
                     - action: input_boolean.turn_off
                       target:
                         entity_id: input_boolean.peblar_solar_session_active
+                    - action: number.set_value
+                      target:
+                        entity_id: number.peblar_ev_charger_charge_limit
+                      data:
+                        value: 6
+                    - action: logbook.log
+                      data:
+                        name: Peblar solar test
+                        message: >-
+                          Charging paused because the Growatt SOC fell more than
+                          1 percentage point below the solar target.
+                - conditions:
+                    - condition: template
+                      value_template: >-
+                        {% set soc = states('sensor.growatt_tcp_canary_battery_battery_soc') %}
+                        {{ (is_number(soc) and (soc | float < 0 or soc | float > 100))
+                          or states('sensor.peblar_ev_charger_state') not in ['suspended', 'charging']
+                          }}
+                  sequence:
+                    - action: switch.turn_off
+                      target:
+                        entity_id: switch.peblar_ev_charger_charge
                     - action: input_boolean.turn_off
                       target:
-                        entity_id: input_boolean.peblar_solar_test_armed
+                        entity_id: input_boolean.peblar_solar_session_active
                     - action: persistent_notification.create
                       data:
                         notification_id: peblar_solar_test_precondition
                         title: Peblar solar test stopped
                         message: >-
-                          The EV, battery SoC, or Growatt AC-charge precondition
-                          is not safe. Charging was stopped and the test was
-                          disarmed.
+                          The EV or battery SoC precondition is not safe.
+                          Charging was stopped; the test remains armed.
                 - conditions:
                     - condition: state
                       entity_id: switch.peblar_ev_charger_charge
@@ -188,16 +295,11 @@
                       entity_id: input_boolean.peblar_solar_session_active
                       state: "off"
                   sequence:
-                    - if:
-                        - condition: template
-                          value_template: >-
-                            {{ states('number.peblar_ev_charger_charge_limit') | float(0) != 6 }}
-                      then:
-                        - action: number.set_value
-                          target:
-                            entity_id: number.peblar_ev_charger_charge_limit
-                          data:
-                            value: 6
+                    - action: number.set_value
+                      target:
+                        entity_id: number.peblar_ev_charger_charge_limit
+                      data:
+                        value: 6
                     - if:
                         - condition: template
                           value_template: >-
@@ -208,11 +310,35 @@
                             entity_id: select.peblar_ev_charger_smart_charging
                           data:
                             option: default
+                        - action: homeassistant.update_entity
+                          target:
+                            entity_id: switch.peblar_ev_charger_charge
+                        - if:
+                            - condition: state
+                              entity_id: switch.peblar_ev_charger_charge
+                              state: "on"
+                          then:
+                            - action: switch.turn_off
+                              target:
+                                entity_id: switch.peblar_ev_charger_charge
                     - if:
                         - condition: template
                           value_template: >-
-                            {{ states('sensor.growatt_soc') | float(0) >
-                              (states('input_number.peblar_solar_battery_target_soc') | float(90)) + 5 }}
+                            {% set soc = states('sensor.growatt_tcp_canary_battery_battery_soc') | float(-1) %}
+                            {% set target = states('input_number.peblar_solar_battery_target_soc') | float(90) %}
+                            {% set export_w = states('sensor.growatt_tcp_canary_grid_grid_export_power') | float(-1) %}
+                            {% set off_for_s = as_timestamp(now()) - as_timestamp(states.switch.peblar_ev_charger_charge.last_changed, 0) %}
+                            {% set cutoff = as_timestamp(now()) | int(0) - relay_window_s %}
+                            {% set recent_switches = namespace(count=0) %}
+                            {% for raw_timestamp in states('input_text.peblar_solar_relay_switch_history').split(',') %}
+                              {% if raw_timestamp | trim | int(0) >= cutoff %}
+                                {% set recent_switches.count = recent_switches.count + 1 %}
+                              {% endif %}
+                            {% endfor %}
+                            {{ off_for_s >= relay_min_state_s
+                              and recent_switches.count < relay_max_switches
+                              and ((soc >= target + soc_target_band_pct)
+                                or (soc == target and export_w > grid_power_threshold_w)) }}
                       then:
                         - action: switch.turn_on
                           target:
@@ -220,6 +346,12 @@
                         - action: input_boolean.turn_on
                           target:
                             entity_id: input_boolean.peblar_solar_session_active
+                        - action: logbook.log
+                          data:
+                            name: Peblar solar test
+                            message: >-
+                              Charging started at the SOC target with sustained
+                              grid export.
                         - action: persistent_notification.dismiss
                           data:
                             notification_id: peblar_solar_test_stopped
@@ -230,6 +362,9 @@
                     - condition: state
                       entity_id: input_boolean.peblar_solar_session_active
                       state: "off"
+                    - condition: template
+                      value_template: >-
+                        {{ is_number(states('sensor.growatt_tcp_canary_battery_battery_soc')) }}
                   sequence:
                     - action: switch.turn_off
                       target:
@@ -244,21 +379,23 @@
                         entity_id: select.peblar_ev_charger_smart_charging
                       data:
                         option: default
+                    - action: homeassistant.update_entity
+                      target:
+                        entity_id: switch.peblar_ev_charger_charge
                     - if:
-                        - condition: template
-                          value_template: >-
-                            {{ states('sensor.growatt_soc') | float(0) >
-                              (states('input_number.peblar_solar_battery_target_soc') | float(90)) + 5 }}
+                        - condition: state
+                          entity_id: switch.peblar_ev_charger_charge
+                          state: "on"
                       then:
-                        - action: switch.turn_on
+                        - action: switch.turn_off
                           target:
                             entity_id: switch.peblar_ev_charger_charge
-                        - action: input_boolean.turn_on
-                          target:
-                            entity_id: input_boolean.peblar_solar_session_active
                 - conditions:
                     - condition: state
                       entity_id: switch.peblar_ev_charger_charge
+                      state: "on"
+                    - condition: state
+                      entity_id: input_boolean.peblar_solar_session_active
                       state: "on"
                     - condition: template
                       value_template: >-
@@ -280,101 +417,75 @@
                         entity_id: select.peblar_ev_charger_smart_charging
                       data:
                         option: default
-                    - if:
-                        - condition: template
-                          value_template: >-
-                            {{ states('sensor.growatt_soc') | float(0) >
-                              (states('input_number.peblar_solar_battery_target_soc') | float(90)) + 5 }}
-                      then:
-                        - action: switch.turn_on
-                          target:
-                            entity_id: switch.peblar_ev_charger_charge
-                        - action: input_boolean.turn_on
-                          target:
-                            entity_id: input_boolean.peblar_solar_session_active
-                - conditions:
-                    - condition: state
-                      entity_id: switch.peblar_ev_charger_charge
-                      state: "on"
-                    - condition: template
-                      value_template: >-
-                        {{ states('sensor.growatt_soc') | float(0) <
-                          (states('input_number.peblar_solar_battery_target_soc') | float(90)) - 5
-                          and states('number.peblar_ev_charger_charge_limit') | float(6) > 6 }}
-                  sequence:
-                    - action: number.set_value
-                      target:
-                        entity_id: number.peblar_ev_charger_charge_limit
-                      data:
-                        value: 6
-                - conditions:
-                    - condition: state
-                      entity_id: switch.peblar_ev_charger_charge
-                      state: "on"
-                    - condition: template
-                      value_template: >-
-                        {% set target_soc = states('input_number.peblar_solar_battery_target_soc') | float(90) %}
-                        {% set soc = states('sensor.growatt_soc') | float(0) %}
-                        {% set limit = states('number.peblar_ev_charger_charge_limit') | float(6) %}
-                        {{ soc < target_soc - 5 and limit <= 6 }}
-                  sequence:
-                    - action: switch.turn_off
+                    - action: homeassistant.update_entity
                       target:
                         entity_id: switch.peblar_ev_charger_charge
-                    - action: input_boolean.turn_off
-                      target:
-                        entity_id: input_boolean.peblar_solar_session_active
-                    - action: logbook.log
-                      data:
-                        name: Peblar solar test
-                        message: >-
-                          Battery fell more than 5 percentage points below the
-                          solar target at the 6 A minimum; charging paused.
+                    - if:
+                        - condition: state
+                          entity_id: switch.peblar_ev_charger_charge
+                          state: "on"
+                      then:
+                        - action: switch.turn_off
+                          target:
+                            entity_id: switch.peblar_ev_charger_charge
                 - conditions:
                     - condition: state
                       entity_id: switch.peblar_ev_charger_charge
                       state: "on"
                     - condition: template
                       value_template: >-
-                        {% set target_soc = states('input_number.peblar_solar_battery_target_soc') | float(90) %}
-                        {% set limit = states('number.peblar_ev_charger_charge_limit') | float(6) %}
-                        {% set import_w = states('sensor.growatt_power_to_user') | float(0) %}
-                        {% set soc = states('sensor.growatt_soc') | float(0) %}
-                        {% set discharge_w = states('sensor.growatt_discharge_power') | float(0) %}
-                        {{ limit > 6 and (import_w > 400
-                          or discharge_w > max_battery_discharge_w
-                          or (soc <= target_soc and discharge_w > 200)) }}
-                  sequence:
-                    - action: number.set_value
-                      target:
-                        entity_id: number.peblar_ev_charger_charge_limit
-                      data:
-                        value: "{{ [6, (states('number.peblar_ev_charger_charge_limit') | int(6)) - 1] | max }}"
-                - conditions:
-                    - condition: state
-                      entity_id: switch.peblar_ev_charger_charge
-                      state: "on"
-                    - condition: template
-                      value_template: >-
-                        {% set target_soc = states('input_number.peblar_solar_battery_target_soc') | float(90) %}
-                        {% set soc = states('sensor.growatt_soc') | float(0) %}
-                        {% set export_w = states('sensor.growatt_power_to_grid') | float(0) %}
-                        {% set import_w = states('sensor.growatt_power_to_user') | float(0) %}
-                        {% set charge_w = states('sensor.growatt_charge_power') | float(0) %}
-                        {% set discharge_w = states('sensor.growatt_discharge_power') | float(0) %}
+                        {% set charge_state = states('sensor.growatt_tcp_canary_battery_battery_charge_power') %}
+                        {% set discharge_state = states('sensor.growatt_tcp_canary_battery_battery_discharge_power') %}
+                        {% set peblar_state = states('sensor.peblar_ev_charger_power') %}
+                        {% set charge_w = charge_state | float(0) %}
+                        {% set discharge_w = discharge_state | float(0) %}
+                        {% set peblar_w = peblar_state | float(0) %}
                         {% set limit = states('number.peblar_ev_charger_charge_limit') | float(6) %}
                         {% set max_limit = state_attr('number.peblar_ev_charger_charge_limit', 'max') | float(0) %}
-                        {{ limit < max_limit
-                          and discharge_w + battery_discharge_ramp_margin_w < max_battery_discharge_w and (
-                          (soc > target_soc and import_w < 100)
-                          or (soc >= target_soc and (export_w > 800 or charge_w > 800))
-                        ) }}
+                        {% set soc = states('sensor.growatt_tcp_canary_battery_battery_soc') | float(0) %}
+                        {% set target = states('input_number.peblar_solar_battery_target_soc') | float(90) %}
+                        {% set soc_error = target - soc %}
+                        {% set net_battery_w = charge_w - discharge_w %}
+                        {% set desired_battery_w = 0 %}
+                        {% if soc_error > soc_target_band_pct %}
+                          {% set desired_battery_w = soc_target_battery_power_w %}
+                        {% elif soc_error < -soc_target_band_pct %}
+                          {% set desired_battery_w = -soc_target_battery_power_w %}
+                        {% endif %}
+                        {{ trigger.id == 'control'
+                          and is_number(soc)
+                          and is_number(charge_state)
+                          and is_number(discharge_state)
+                          and is_number(peblar_state)
+                          and peblar_w > 0
+                          and limit >= min_peblar_charge_a
+                          and max_limit >= min_peblar_charge_a
+                          and (charge_w - discharge_w - desired_battery_w) | abs > 20 }}
                   sequence:
                     - action: number.set_value
                       target:
                         entity_id: number.peblar_ev_charger_charge_limit
                       data:
-                        value: "{{ (states('number.peblar_ev_charger_charge_limit') | int(6)) + 1 }}"
+                        value: >-
+                          {% set charge_w = states('sensor.growatt_tcp_canary_battery_battery_charge_power') | float(0) %}
+                          {% set discharge_w = states('sensor.growatt_tcp_canary_battery_battery_discharge_power') | float(0) %}
+                          {% set peblar_w = states('sensor.peblar_ev_charger_power') | float(0) %}
+                          {% set limit = states('number.peblar_ev_charger_charge_limit') | float(6) %}
+                          {% set max_limit = state_attr('number.peblar_ev_charger_charge_limit', 'max') | float(0) %}
+                          {% set net_battery_w = charge_w - discharge_w %}
+                          {% set soc = states('sensor.growatt_tcp_canary_battery_battery_soc') | float(0) %}
+                          {% set target = states('input_number.peblar_solar_battery_target_soc') | float(90) %}
+                          {% set soc_error = target - soc %}
+                          {% set desired_battery_w = 0 %}
+                          {% if soc_error > soc_target_band_pct %}
+                            {% set desired_battery_w = soc_target_battery_power_w %}
+                          {% elif soc_error < -soc_target_band_pct %}
+                            {% set desired_battery_w = -soc_target_battery_power_w %}
+                          {% endif %}
+                          {% set battery_power_error = net_battery_w - desired_battery_w %}
+                          {% set watts_per_amp = peblar_w / limit %}
+                          {% set target_limit = limit + battery_balance_gain * battery_power_error / watts_per_amp %}
+                          {{ [max_limit, [min_peblar_charge_a, target_limit] | max] | min | round(2) }}
       default: []
 
 - id: peblar_restore_scheduled_charging_dev
@@ -412,8 +523,8 @@
   alias: Growatt TOU planner write test (DEV)
   description: >-
     One-shot staging-only bridge from the read-only planner result to the
-    existing Growatt HA TOU controls. It is armed explicitly and writes only
-    the selected fixed slot.
+    growatt_modbus action surface. It is armed explicitly and writes only the
+    selected fixed slot as one packed FC16 start/end pair.
   mode: single
   triggers:
     - trigger: state
@@ -436,51 +547,28 @@
         {{ plan is mapping and plan.valid and plan.slot == 1
            and plan.start is not none and plan.end is not none }}
   actions:
-    - if:
-        - condition: template
-          value_template: >-
-            {{ states('time.zolder_growatt_tou_1_start') !=
-               as_datetime(state_attr('sensor.ems_shadow_growatt_daytime_charge_status', 'selected').start).strftime('%H:%M:%S') }}
-      then:
-        - action: time.set_value
-          continue_on_error: true
-          target:
-            entity_id: time.zolder_growatt_tou_1_start
-          data:
-            time: >-
-              {{ as_datetime(state_attr('sensor.ems_shadow_growatt_daytime_charge_status', 'selected').start).strftime('%H:%M:%S') }}
-    - if:
-        - condition: template
-          value_template: >-
-            {{ states('time.zolder_growatt_tou_1_end') !=
-               as_datetime(state_attr('sensor.ems_shadow_growatt_daytime_charge_status', 'selected').end).strftime('%H:%M:%S') }}
-      then:
-        - action: time.set_value
-          continue_on_error: true
-          target:
-            entity_id: time.zolder_growatt_tou_1_end
-          data:
-            time: >-
-              {{ as_datetime(state_attr('sensor.ems_shadow_growatt_daytime_charge_status', 'selected').end).strftime('%H:%M:%S') }}
-    - if:
-        - condition: template
-          value_template: "{{ states('select.zolder_growatt_tou_1_priority') != 'battery_first' }}"
-      then:
-        - action: select.select_option
-          continue_on_error: true
-          target:
-            entity_id: select.zolder_growatt_tou_1_priority
-          data:
-            option: battery_first
-    - if:
-        - condition: state
-          entity_id: switch.zolder_growatt_tou_1_enabled
-          state: "off"
-      then:
-        - action: switch.turn_on
-          continue_on_error: true
-          target:
-            entity_id: switch.zolder_growatt_tou_1_enabled
+    - variables:
+        selected: "{{ state_attr('sensor.ems_shadow_growatt_daytime_charge_status', 'selected') }}"
+        # H3038 is a packed start/control word: time + Battery First (1) + enable.
+        start_word: >-
+          {{ (as_datetime(selected.start).hour * 256 +
+              as_datetime(selected.start).minute + 40960) | int }}
+        end_word: >-
+          {{ (as_datetime(selected.end).hour * 256 +
+              as_datetime(selected.end).minute) | int }}
+    - action: growatt_modbus.write_registers
+      data:
+        device_id: 5514d973aad7df58676681e3a55ea464
+        register: 3038
+        values:
+          - "{{ start_word }}"
+          - "{{ end_word }}"
+    - action: growatt_modbus.read_register
+      continue_on_error: true
+      data:
+        device_id: 5514d973aad7df58676681e3a55ea464
+        register: 3038
+        register_type: holding
     - action: input_boolean.turn_on
       target:
         entity_id: input_boolean.growatt_tou_write_test_done
@@ -488,7 +576,7 @@
       data:
         name: Growatt TOU planner
         message: >-
-          Wrote planner slot 1 via HA controls:
+          Wrote planner slot 1 via growatt_modbus.write_registers:
           {{ state_attr('sensor.ems_shadow_growatt_daytime_charge_status', 'selected').start }}
           to
           {{ state_attr('sensor.ems_shadow_growatt_daytime_charge_status', 'selected').end }}.

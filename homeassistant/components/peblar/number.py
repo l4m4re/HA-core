@@ -49,13 +49,14 @@ class PeblarChargeCurrentLimitNumberEntity(
     below 6 amps is ignored. It means the Peblar is not charging.
     Peblar has assigned a dual functionality to the charge current limit
     number, it is used to set the current charging value and to start/stop/pauze
-    the charging process.
+    the charging process. The local API accepts integer mA values, so expose
+    10 mA (0.01 A) resolution for closed-loop control.
     """
 
     _attr_device_class = NumberDeviceClass.CURRENT
     _attr_entity_category = EntityCategory.CONFIG
     _attr_native_min_value = 6
-    _attr_native_step = 1
+    _attr_native_step = 0.01
     _attr_native_unit_of_measurement = UnitOfElectricCurrent.AMPERE
     _attr_translation_key = "charge_current_limit"
 
@@ -90,12 +91,12 @@ class PeblarChargeCurrentLimitNumberEntity(
             and last_state.state not in (STATE_UNKNOWN, STATE_UNAVAILABLE)
             and last_number_data.native_value
         ):
-            self._attr_native_value = last_number_data.native_value
+            self._attr_native_value = round(last_number_data.native_value, 2)
             # Set the last known charging limit in the runtime data the
             # start/stop/pauze functionality needs it in order to restore
             # the last known charging limits when charging is resumed.
-            self.coordinator.config_entry.runtime_data.last_known_charging_limit = int(
-                last_number_data.native_value
+            self.coordinator.config_entry.runtime_data.last_known_charging_limit = (
+                round(last_number_data.native_value, 2)
             )
         await super().async_added_to_hass()
         self._handle_coordinator_update()
@@ -110,7 +111,7 @@ class PeblarChargeCurrentLimitNumberEntity(
         """
         if (
             current_charge_limit := round(
-                self.coordinator.data.ev.charge_current_limit / 1000
+                self.coordinator.data.ev.charge_current_limit / 1000, 2
             )
         ) < 6:
             return
@@ -131,11 +132,14 @@ class PeblarChargeCurrentLimitNumberEntity(
         # as the native value and the last known charging limit in the runtime
         # data. So we can pick it up once charging gets enabled again.
         if self.coordinator.data.ev.charge_current_limit < 6000:
-            self._attr_native_value = int(value)
-            self.coordinator.config_entry.runtime_data.last_known_charging_limit = int(
+            value = round(value, 2)
+            self._attr_native_value = value
+            self.coordinator.config_entry.runtime_data.last_known_charging_limit = (
                 value
             )
             self.async_write_ha_state()
             return
-        await self.coordinator.api.ev_interface(charge_current_limit=int(value) * 1000)
+        await self.coordinator.api.ev_interface(
+            charge_current_limit=round(value * 1000)
+        )
         await self.coordinator.async_request_refresh()

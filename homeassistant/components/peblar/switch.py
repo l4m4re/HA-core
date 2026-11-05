@@ -38,7 +38,7 @@ def _async_peblar_charge(
     """Set the charge state."""
     charge_current_limit = 0
     if on:
-        charge_current_limit = (
+        charge_current_limit = round(
             coordinator.config_entry.runtime_data.last_known_charging_limit * 1000
         )
     return coordinator.api.ev_interface(charge_current_limit=charge_current_limit)

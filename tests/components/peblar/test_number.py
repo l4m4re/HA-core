@@ -76,6 +76,29 @@ async def test_number_set_value(
     mocked_method.mock_calls[0].assert_called_with({"charge_current_limit": 10})
 
 
+@pytest.mark.parametrize("init_integration", [Platform.NUMBER], indirect=True)
+@pytest.mark.usefixtures("init_integration", "entity_registry_enabled_by_default")
+async def test_number_set_value_with_fractional_ampere(
+    hass: HomeAssistant,
+    mock_peblar: MagicMock,
+) -> None:
+    """Test that the current limit preserves 10 mA resolution."""
+    mocked_method = mock_peblar.rest_api.return_value.ev_interface
+    mocked_method.reset_mock()
+
+    await hass.services.async_call(
+        NUMBER_DOMAIN,
+        SERVICE_SET_VALUE,
+        {
+            ATTR_ENTITY_ID: "number.peblar_ev_charger_charge_limit",
+            ATTR_VALUE: 10.01,
+        },
+        blocking=True,
+    )
+
+    mocked_method.assert_any_call(charge_current_limit=10010)
+
+
 async def test_number_set_value_when_charging_is_suspended(
     hass: HomeAssistant,
     mock_peblar: MagicMock,
@@ -110,7 +133,7 @@ async def test_number_set_value_when_charging_is_suspended(
 
     # Check the state is reflected
     assert (state := hass.states.get(entity_id))
-    assert state.state == "10"
+    assert state.state == "10.0"
 
 
 @pytest.mark.parametrize(
@@ -234,14 +257,14 @@ async def test_restore_state(
     mock_peblar: MagicMock,
     mock_config_entry: MockConfigEntry,
     restore_state: str,
-    restore_native_value: int,
+    restore_native_value: float,
     expected_state: str,
 ) -> None:
     """Test restoring the number state."""
     EXTRA_STORED_DATA = {
         "native_max_value": 16,
         "native_min_value": 6,
-        "native_step": 1,
+        "native_step": 0.01,
         "native_unit_of_measurement": "A",
         "native_value": restore_native_value,
     }

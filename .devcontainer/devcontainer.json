@@ -19,11 +19,21 @@
   },
   // Port 5683 udp is used by Shelly integration
   "appPort": ["8123:8123", "5683:5683/udp"],
-  "forwardPorts": [8123],
+  "forwardPorts": [8123, 1455, 8888],
   "portsAttributes": {
     "8123": {
       "label": "Home Assistant STAGING",
       "protocol": "http"
+    },
+    "1455": {
+      "label": "Codex OAuth callback",
+      "protocol": "http",
+      "onAutoForward": "silent"
+    },
+    "8888": {
+      "label": "Additional local service",
+      "protocol": "http",
+      "onAutoForward": "silent"
     }
   },
   "runArgs": [
@@ -45,7 +55,7 @@
         "GitHub.vscode-pull-request-github",
         "GitHub.copilot",
         "eamodio.gitlens",
-        "OpenAI.codex"
+        "openai.chatgpt"
       ],
       // Please keep this file in sync with settings in home-assistant/.vscode/settings.default.jsonc
       "settings": {
@@ -61,12 +71,7 @@
         "editor.formatOnSave": true,
         "editor.formatOnType": true,
         "files.trimTrailingWhitespace": true,
-        "terminal.integrated.profiles.linux": {
-          "zsh": {
-            "path": "/usr/bin/zsh"
-          }
-        },
-        "terminal.integrated.defaultProfile.linux": "zsh",
+        "terminal.integrated.defaultProfile.linux": "bash",
         "yaml.customTags": [
           "!input scalar",
           "!secret scalar",

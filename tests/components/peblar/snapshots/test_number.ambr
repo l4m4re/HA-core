@@ -9,7 +9,7 @@
       <NumberEntityCapabilityAttribute.MAX: 'max'>: 16,
       <NumberEntityCapabilityAttribute.MIN: 'min'>: 6,
       <NumberEntityCapabilityAttribute.MODE: 'mode'>: <NumberMode.AUTO: 'auto'>,
-      <NumberEntityCapabilityAttribute.STEP: 'step'>: 1,
+      <NumberEntityCapabilityAttribute.STEP: 'step'>: 0.01,
     }),
     'config_entry_id': <ANY>,
     'config_subentry_id': <ANY>,
@@ -49,7 +49,7 @@
       <NumberEntityCapabilityAttribute.MAX: 'max'>: 16,
       <NumberEntityCapabilityAttribute.MIN: 'min'>: 6,
       <NumberEntityCapabilityAttribute.MODE: 'mode'>: <NumberMode.AUTO: 'auto'>,
-      <NumberEntityCapabilityAttribute.STEP: 'step'>: 1,
+      <NumberEntityCapabilityAttribute.STEP: 'step'>: 0.01,
       <EntityStateAttribute.UNIT_OF_MEASUREMENT: 'unit_of_measurement'>: <UnitOfElectricCurrent.AMPERE: 'A'>,
     }),
     'context': <ANY>,
@@ -57,6 +57,6 @@
     'last_changed': <ANY>,
     'last_reported': <ANY>,
     'last_updated': <ANY>,
-    'state': '16',
+    'state': '16.0',
   })
 # ---

@@ -32,7 +32,7 @@ class PeblarRuntimeData:
     """Class to hold runtime data."""
 
     data_coordinator: PeblarDataUpdateCoordinator
-    last_known_charging_limit = 6
+    last_known_charging_limit: float = 6.0
     system_information: PeblarSystemInformation
     user_configuration_coordinator: PeblarUserConfigurationDataUpdateCoordinator
     version_coordinator: PeblarVersionDataUpdateCoordinator
