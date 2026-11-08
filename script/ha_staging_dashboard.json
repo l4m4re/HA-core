@@ -11,13 +11,13 @@
           "title": "Power flow",
           "show_header_toggle": false,
           "entities": [
-            "sensor.growatt_tcp_canary_solar_solar_total_power",
-            "sensor.growatt_tcp_canary_load_house_consumption",
-            "sensor.growatt_tcp_canary_load_power_to_user",
-            "sensor.growatt_tcp_canary_grid_power_to_grid",
-            "sensor.growatt_tcp_canary_battery_battery_charge_power",
-            "sensor.growatt_tcp_canary_battery_battery_discharge_power",
-            "sensor.growatt_tcp_canary_battery_battery_soc"
+            "sensor.growatt_solar_solar_total_power",
+            "sensor.growatt_load_house_consumption",
+            "sensor.growatt_load_power_to_user",
+            "sensor.growatt_grid_power_to_grid",
+            "sensor.growatt_battery_battery_charge_power",
+            "sensor.growatt_battery_battery_discharge_power",
+            "sensor.growatt_battery_battery_soc"
           ]
         },
         {
@@ -25,11 +25,11 @@
           "title": "Power flow history",
           "hours_to_show": 24,
           "entities": [
-            "sensor.growatt_tcp_canary_solar_solar_total_power",
-            "sensor.growatt_tcp_canary_load_house_consumption",
-            "sensor.growatt_tcp_canary_grid_power_to_grid",
-            "sensor.growatt_tcp_canary_battery_battery_charge_power",
-            "sensor.growatt_tcp_canary_battery_battery_discharge_power"
+            "sensor.growatt_solar_solar_total_power",
+            "sensor.growatt_load_house_consumption",
+            "sensor.growatt_grid_power_to_grid",
+            "sensor.growatt_battery_battery_charge_power",
+            "sensor.growatt_battery_battery_discharge_power"
           ]
         },
         {
@@ -37,14 +37,14 @@
           "title": "PV / inverter",
           "show_header_toggle": false,
           "entities": [
-            "sensor.growatt_tcp_canary_solar_pv1_power",
-            "sensor.growatt_tcp_canary_solar_pv2_power",
-            "sensor.growatt_tcp_canary_solar_pv1_voltage",
-            "sensor.growatt_tcp_canary_solar_pv2_voltage",
-            "sensor.growatt_tcp_canary_solar_pv1_current",
-            "sensor.growatt_tcp_canary_solar_pv2_current",
-            "sensor.growatt_tcp_canary_solar_ac_power",
-            "sensor.growatt_tcp_canary_solar_ac_frequency"
+            "sensor.growatt_solar_pv1_power",
+            "sensor.growatt_solar_pv2_power",
+            "sensor.growatt_solar_pv1_voltage",
+            "sensor.growatt_solar_pv2_voltage",
+            "sensor.growatt_solar_pv1_current",
+            "sensor.growatt_solar_pv2_current",
+            "sensor.growatt_solar_ac_power",
+            "sensor.growatt_solar_ac_frequency"
           ]
         },
         {
@@ -52,9 +52,9 @@
           "title": "Communications",
           "show_header_toggle": false,
           "entities": [
-            "sensor.growatt_tcp_canary_status",
-            "sensor.growatt_tcp_canary_warning_code",
-            "sensor.growatt_tcp_canary_fault_code"
+            "sensor.growatt_status",
+            "sensor.growatt_warning_code",
+            "sensor.growatt_fault_code"
           ]
         }
       ]
@@ -69,12 +69,12 @@
           "title": "Battery telemetry",
           "show_header_toggle": false,
           "entities": [
-            "sensor.growatt_tcp_canary_battery_battery_soc",
-            "sensor.growatt_tcp_canary_battery_battery_voltage",
-            "sensor.growatt_tcp_canary_battery_battery_current",
-            "sensor.growatt_tcp_canary_battery_battery_temperature",
-            "sensor.growatt_tcp_canary_battery_battery_charge_power",
-            "sensor.growatt_tcp_canary_battery_battery_discharge_power"
+            "sensor.growatt_battery_battery_soc",
+            "sensor.growatt_battery_battery_voltage",
+            "sensor.growatt_battery_battery_current",
+            "sensor.growatt_battery_battery_temperature",
+            "sensor.growatt_battery_battery_charge_power",
+            "sensor.growatt_battery_battery_discharge_power"
           ]
         },
         {
@@ -82,10 +82,10 @@
           "title": "Battery history",
           "hours_to_show": 24,
           "entities": [
-            "sensor.growatt_tcp_canary_battery_battery_soc",
-            "sensor.growatt_tcp_canary_battery_battery_current",
-            "sensor.growatt_tcp_canary_battery_battery_charge_power",
-            "sensor.growatt_tcp_canary_battery_battery_discharge_power"
+            "sensor.growatt_battery_battery_soc",
+            "sensor.growatt_battery_battery_current",
+            "sensor.growatt_battery_battery_charge_power",
+            "sensor.growatt_battery_battery_discharge_power"
           ]
         },
         {
@@ -105,13 +105,13 @@
           "title": "Daily counters",
           "show_header_toggle": false,
           "entities": [
-            "sensor.growatt_tcp_canary_solar_energy_today",
-            "sensor.growatt_tcp_canary_load_load_energy_today",
-            "sensor.growatt_tcp_canary_grid_energy_to_grid_today",
-            "sensor.growatt_tcp_canary_battery_battery_charge_today",
-            "sensor.growatt_tcp_canary_battery_battery_discharge_today",
-            "sensor.growatt_tcp_canary_solar_pv1_energy_today",
-            "sensor.growatt_tcp_canary_solar_pv2_energy_today"
+            "sensor.growatt_solar_energy_today",
+            "sensor.growatt_load_load_energy_today",
+            "sensor.growatt_grid_energy_to_grid_today",
+            "sensor.growatt_battery_battery_charge_today",
+            "sensor.growatt_battery_battery_discharge_today",
+            "sensor.growatt_solar_pv1_energy_today",
+            "sensor.growatt_solar_pv2_energy_today"
           ]
         },
         {
@@ -119,11 +119,11 @@
           "title": "Lifetime counters",
           "show_header_toggle": false,
           "entities": [
-            "sensor.growatt_tcp_canary_solar_energy_total",
-            "sensor.growatt_tcp_canary_load_load_energy_total",
-            "sensor.growatt_tcp_canary_grid_energy_to_grid_total",
-            "sensor.growatt_tcp_canary_battery_battery_charge_total",
-            "sensor.growatt_tcp_canary_battery_battery_discharge_total"
+            "sensor.growatt_solar_energy_total",
+            "sensor.growatt_load_load_energy_total",
+            "sensor.growatt_grid_energy_to_grid_total",
+            "sensor.growatt_battery_battery_charge_total",
+            "sensor.growatt_battery_battery_discharge_total"
           ]
         },
         {
@@ -131,11 +131,11 @@
           "title": "Energy counters",
           "hours_to_show": 48,
           "entities": [
-            "sensor.growatt_tcp_canary_solar_energy_total",
-            "sensor.growatt_tcp_canary_load_load_energy_total",
-            "sensor.growatt_tcp_canary_grid_energy_to_grid_total",
-            "sensor.growatt_tcp_canary_battery_battery_charge_total",
-            "sensor.growatt_tcp_canary_battery_battery_discharge_total"
+            "sensor.growatt_solar_energy_total",
+            "sensor.growatt_load_load_energy_total",
+            "sensor.growatt_grid_energy_to_grid_total",
+            "sensor.growatt_battery_battery_charge_total",
+            "sensor.growatt_battery_battery_discharge_total"
           ]
         }
       ]
@@ -150,12 +150,12 @@
           "title": "Inverter diagnostics",
           "show_header_toggle": false,
           "entities": [
-            "sensor.growatt_tcp_canary_status",
-            "sensor.growatt_tcp_canary_derating_mode",
-            "sensor.growatt_tcp_canary_warning_code",
-            "sensor.growatt_tcp_canary_fault_code",
-            "sensor.growatt_tcp_canary_inverter_temperature",
-            "sensor.growatt_tcp_canary_ipm_temperature"
+            "sensor.growatt_status",
+            "sensor.growatt_derating_mode",
+            "sensor.growatt_warning_code",
+            "sensor.growatt_fault_code",
+            "sensor.growatt_inverter_temperature",
+            "sensor.growatt_ipm_temperature"
           ]
         },
         {
@@ -163,7 +163,7 @@
           "title": "XH read-only feedback",
           "show_header_toggle": false,
           "entities": [
-            "sensor.growatt_tcp_canary_battery_priority_mode"
+            "sensor.growatt_battery_priority_mode"
           ]
         },
         {
@@ -184,7 +184,7 @@
           "show_header_toggle": false,
           "entities": [
             "sensor.ems_shadow_input_status",
-            "sensor.growatt_tcp_canary_battery_battery_soc",
+            "sensor.growatt_battery_battery_soc",
             "sensor.zonneplan_current_quarter_hourly_electricity_tariff",
             "sensor.ems_shadow_current_price",
             "sensor.ems_shadow_price_moving_average_1h",
@@ -304,9 +304,9 @@
             "input_boolean.peblar_solar_test_armed",
             "input_number.peblar_solar_battery_target_soc",
             "input_button.peblar_restore_night_schedule",
-            "sensor.growatt_tcp_canary_last_update",
-            "sensor.growatt_tcp_canary_load_power_to_user",
-            "sensor.growatt_tcp_canary_grid_power_to_grid"
+            "sensor.growatt_last_update",
+            "sensor.growatt_load_power_to_user",
+            "sensor.growatt_grid_power_to_grid"
           ]
         },
         {
@@ -317,14 +317,14 @@
         {
           "type": "markdown",
           "title": "Solarlaadregeling: voorwaarden en status",
-          "content": "{% set armed = is_state('input_boolean.peblar_solar_test_armed', 'on') %}\n{% set soc = states('sensor.growatt_tcp_canary_battery_battery_soc') | float(-1) %}\n{% set target = states('input_number.peblar_solar_battery_target_soc') | float(90) %}\n{% set update = as_timestamp(states('sensor.growatt_tcp_canary_last_update'), 0) %}\n{% set age = as_timestamp(now()) - update if update else none %}\n{% set peb = states('sensor.peblar_ev_charger_state') %}\n{% set discharge = states('sensor.growatt_tcp_canary_battery_battery_discharge_power') | float(0) %}\n**Controller:** {{ 'bewapend' if armed else 'uit — geen automatische laadacties' }}\n**Sessie:** {{ 'actief' if is_state('input_boolean.peblar_solar_session_active', 'on') else 'inactief' }} (interne status)\n**Solar-setpoint:** {{ target | round(0) }}% · regelband {{ (target - 5) | round(0) }}–{{ (target + 5) | round(0) }}%\n**Thuisbatterij:** {{ soc if soc >= 0 else 'onbekend' }}% · Growatt-poll {{ age | round(0) if age is not none else 'onbekend' }} s geleden\n**Peblar:** {{ peb }} · {{ states('number.peblar_ev_charger_charge_limit') }} A · {{ states('select.peblar_ev_charger_smart_charging') }}\n**Growatt-accuontlading:** {{ discharge }} W · proefgrens 3.500 W\n\nArm de proef met de schakelaar hierboven. Hij werkt op elke dag waarop je hem handmatig bewapent en de veiligheidsmetingen vers zijn. De automatisering zet Peblar uit, stelt 6 A in en kiest `default`. Bij bewapenen of aansluiten van de EV wordt de actuele SOC eerst als startdoel vastgelegd. Hij start en hervat pas boven setpoint +5 procentpunt. De snelle lus past de Peblar-stroom in stappen van 0,01 A aan op Growatt acculading en -ontlading, met een vaste 3.500 W ontlaadgrens en 300 W marge. De proef hanteert een vaste accuontlaadgrens van 3.500 W en laat bij opschalen minimaal 300 W ruimte. Boven de snelle ontlaadgrens of bij ontlading onder het setpoint verlaagt hij de laadstroom; bij acculading boven 800 W en SoC boven het setpoint kan hij die verhogen. De langzame lus schakelt direct uit bij setpoint -5 en direct aan bij setpoint +5. Binnen die band wordt pas geschakeld nadat de laadstatus minimaal 15 minuten stabiel is en de SoC minimaal 5 minuten aan de juiste kant van het setpoint staat.\n\nOntbrekende/verouderde Growatt- of Peblar-inputs, geen aangesloten EV of Growatt AC Charge aan stoppen en ontgrendelen de proef. Growatt `Power to user` en `Power to grid` zijn de import/exportfeedback; de Peblar zit al in die meterstroom. De ZOE-SoC en P1-meters zijn geen invoer.\n\nZet de arm-schakelaar uit om te stoppen. Gebruik **Restore Peblar night schedule** om daarna de eerder gebruikte `scheduled`-modus en 28 A limiet terug te zetten. Tijdens de solarproef niet tegelijk de Peblar-app of een andere HA-instantie laten sturen."
+          "content": "{% set armed = is_state('input_boolean.peblar_solar_test_armed', 'on') %}\n{% set soc = states('sensor.growatt_battery_battery_soc') | float(-1) %}\n{% set target = states('input_number.peblar_solar_battery_target_soc') | float(90) %}\n{% set update = as_timestamp(states('sensor.growatt_last_update'), 0) %}\n{% set age = as_timestamp(now()) - update if update else none %}\n{% set peb = states('sensor.peblar_ev_charger_state') %}\n{% set discharge = states('sensor.growatt_battery_battery_discharge_power') | float(0) %}\n**Controller:** {{ 'bewapend' if armed else 'uit — geen automatische laadacties' }}\n**Sessie:** {{ 'actief' if is_state('input_boolean.peblar_solar_session_active', 'on') else 'inactief' }} (interne status)\n**Solar-setpoint:** {{ target | round(0) }}% · regelband {{ (target - 5) | round(0) }}–{{ (target + 5) | round(0) }}%\n**Thuisbatterij:** {{ soc if soc >= 0 else 'onbekend' }}% · Growatt-poll {{ age | round(0) if age is not none else 'onbekend' }} s geleden\n**Peblar:** {{ peb }} · {{ states('number.peblar_ev_charger_charge_limit') }} A · {{ states('select.peblar_ev_charger_smart_charging') }}\n**Growatt-accuontlading:** {{ discharge }} W · proefgrens 3.500 W\n\nArm de proef met de schakelaar hierboven. Hij werkt op elke dag waarop je hem handmatig bewapent en de veiligheidsmetingen vers zijn. De automatisering zet Peblar uit, stelt 6 A in en kiest `default`. Bij bewapenen of aansluiten van de EV wordt de actuele SOC eerst als startdoel vastgelegd. Hij start en hervat pas boven setpoint +5 procentpunt. De snelle lus past de Peblar-stroom in stappen van 0,01 A aan op Growatt acculading en -ontlading, met een vaste 3.500 W ontlaadgrens en 300 W marge. De proef hanteert een vaste accuontlaadgrens van 3.500 W en laat bij opschalen minimaal 300 W ruimte. Boven de snelle ontlaadgrens of bij ontlading onder het setpoint verlaagt hij de laadstroom; bij acculading boven 800 W en SoC boven het setpoint kan hij die verhogen. De langzame lus schakelt direct uit bij setpoint -5 en direct aan bij setpoint +5. Binnen die band wordt pas geschakeld nadat de laadstatus minimaal 15 minuten stabiel is en de SoC minimaal 5 minuten aan de juiste kant van het setpoint staat.\n\nOntbrekende/verouderde Growatt- of Peblar-inputs, geen aangesloten EV of Growatt AC Charge aan stoppen en ontgrendelen de proef. Growatt `Power to user` en `Power to grid` zijn de import/exportfeedback; de Peblar zit al in die meterstroom. De ZOE-SoC en P1-meters zijn geen invoer.\n\nZet de arm-schakelaar uit om te stoppen. Gebruik **Restore Peblar night schedule** om daarna de eerder gebruikte `scheduled`-modus en 28 A limiet terug te zetten. Tijdens de solarproef niet tegelijk de Peblar-app of een andere HA-instantie laten sturen."
         },
         {
           "type": "entities",
           "title": "Growatt-omvormer",
           "show_header_toggle": false,
           "entities": [
-            "switch.growatt_tcp_canary_inverter_power"
+            "switch.growatt_inverter_power"
           ]
         },
         {

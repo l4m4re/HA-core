@@ -13,6 +13,7 @@ import os
 from pathlib import Path
 import shutil
 import signal
+import sqlite3
 import subprocess
 import sys
 import time
@@ -29,6 +30,9 @@ LOVELACE_DASHBOARD_PATH = CONFIG_DIR / ".storage" / "lovelace.dashboard_staging"
 LOVELACE_REGISTRY_PATH = CONFIG_DIR / ".storage" / "lovelace_dashboards"
 STAGING_DASHBOARD_SOURCE = REPO_ROOT / "script" / "ha_staging_dashboard.json"
 STAGING_AUTOMATIONS_SOURCE = REPO_ROOT / "script" / "ha_staging_automations.yaml"
+GROWATT_ENTRY_NAME = "Growatt"
+GROWATT_LEGACY_ENTITY_PREFIX = "growatt_tcp_canary_"
+GROWATT_ENTITY_PREFIX = "growatt_"
 GROWATT_SOURCE = (
     REPO_ROOT
     / "external"
@@ -125,6 +129,11 @@ def configure_growatt() -> None:
     found = False
     for entry in document.get("data", {}).get("entries", []):
         if entry.get("domain") != "growatt_local":
+            if entry.get("domain") != "growatt_modbus":
+                continue
+            found = True
+            entry["title"] = GROWATT_ENTRY_NAME
+            entry.setdefault("data", {})["name"] = GROWATT_ENTRY_NAME
             continue
         found = True
         data = entry.setdefault("data", {})
@@ -135,6 +144,82 @@ def configure_growatt() -> None:
         entry["disabled_by"] = None
     if found:
         path.write_text(json.dumps(document, indent=2) + "\n", encoding="utf-8")
+
+
+def migrate_growatt_identity() -> None:
+    """Rename the disposable staging Modbus identity and its Recorder metadata."""
+
+    changes: list[tuple[str, str]] = []
+    registry_path = storage_path(".storage/core.entity_registry")
+    if registry_path.exists():
+        document = json.loads(registry_path.read_text(encoding="utf-8"))
+        entities = document.get("data", {}).get("entities", [])
+        entries = load_entries().get("data", {}).get("entries", [])
+        legacy_entry_ids = {
+            entry.get("entry_id")
+            for entry in entries
+            if entry.get("domain") == "growatt_local"
+        }
+        existing = {entity.get("entity_id") for entity in entities}
+        for entity in entities:
+            entity_id = entity.get("entity_id")
+            if (
+                not isinstance(entity_id, str)
+                or GROWATT_LEGACY_ENTITY_PREFIX not in entity_id
+            ):
+                continue
+            replacement = entity_id.replace(
+                GROWATT_LEGACY_ENTITY_PREFIX, GROWATT_ENTITY_PREFIX
+            )
+            if replacement in existing and replacement != entity_id:
+                conflicting = next(
+                    candidate
+                    for candidate in entities
+                    if candidate.get("entity_id") == replacement
+                )
+                if conflicting.get("config_entry_id") not in legacy_entry_ids:
+                    raise RuntimeError(f"staging entity-ID collision: {replacement}")
+                domain, _, object_id = replacement.partition(".")
+                legacy_replacement = f"{domain}.growatt_local_{object_id}"
+                if legacy_replacement in existing:
+                    raise RuntimeError(
+                        f"staging legacy entity-ID collision: {legacy_replacement}"
+                    )
+                conflicting["entity_id"] = legacy_replacement
+                existing.remove(replacement)
+                existing.add(legacy_replacement)
+                changes.append((replacement, legacy_replacement))
+            changes.append((entity_id, replacement))
+            existing.add(replacement)
+            entity["entity_id"] = replacement
+        for entity in document.get("data", {}).get("deleted_entities", []):
+            entity_id = entity.get("entity_id")
+            if isinstance(entity_id, str) and GROWATT_LEGACY_ENTITY_PREFIX in entity_id:
+                replacement = entity_id.replace(
+                    GROWATT_LEGACY_ENTITY_PREFIX, GROWATT_ENTITY_PREFIX
+                )
+                changes.append((entity_id, replacement))
+                entity["entity_id"] = replacement
+        if changes:
+            temporary = registry_path.with_suffix(".tmp")
+            temporary.write_text(json.dumps(document, indent=2) + "\n", encoding="utf-8")
+            temporary.replace(registry_path)
+
+    database_path = CONFIG_DIR / "home-assistant_v2.db"
+    if not database_path.exists():
+        return
+
+    with sqlite3.connect(database_path) as connection:
+        for old_id, new_id in changes:
+            connection.execute(
+                "UPDATE states_meta SET entity_id = ? WHERE entity_id = ?",
+                (new_id, old_id),
+            )
+            connection.execute(
+                "UPDATE statistics_meta SET statistic_id = ? WHERE statistic_id = ?",
+                (new_id, old_id),
+            )
+        connection.commit()
 
 
 def install_staging_dashboard() -> None:
@@ -279,6 +364,7 @@ recorder:
     if path.exists():
         path.write_text(json.dumps(document, indent=2) + "\n", encoding="utf-8")
     configure_growatt()
+    migrate_growatt_identity()
     install_staging_dashboard()
 
 
@@ -288,6 +374,8 @@ def sync(source: Path) -> None:
         raise RuntimeError(f"source is not a directory: {source}")
     if source == CONFIG_DIR.resolve() or CONFIG_DIR.resolve() in source.parents:
         raise RuntimeError("staging config cannot be its own sync source")
+    if process_running():
+        raise RuntimeError("stop staging before syncing a new source snapshot")
     STAGING_ROOT.mkdir(parents=True, exist_ok=True)
     snapshot = STAGING_ROOT / "source-snapshot"
     require_staging_path(snapshot)
@@ -350,6 +438,12 @@ def validate(state: dict[str, Any]) -> None:
             raise RuntimeError("Growatt power control must be enabled in staging")
     if not growatt_found:
         raise RuntimeError("staging source has no growatt_local config entry")
+    for entry in entries:
+        if entry.get("domain") == "growatt_modbus":
+            if entry.get("title") != GROWATT_ENTRY_NAME:
+                raise RuntimeError("staging Modbus entry is not named Growatt")
+            if entry.get("data", {}).get("name") != GROWATT_ENTRY_NAME:
+                raise RuntimeError("staging Modbus data name is not Growatt")
     for name, source in (
         ("growatt_modbus", GROWATT_MODBUS_SOURCE),
         ("ems_contract", EMS_CONTRACT_SOURCE),
@@ -365,6 +459,10 @@ def validate(state: dict[str, Any]) -> None:
         encoding="utf-8"
     ):
         raise RuntimeError("staging YAML does not load the EMS shadow sensors")
+    if ENTITY_REGISTRY_PATH.exists() and GROWATT_LEGACY_ENTITY_PREFIX in (
+        ENTITY_REGISTRY_PATH.read_text(encoding="utf-8")
+    ):
+        raise RuntimeError("staging entity registry still contains the temporary Growatt identity")
 
 
 def process_running() -> bool:

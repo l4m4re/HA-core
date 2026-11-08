@@ -54,15 +54,15 @@
       state: "on"
     - condition: template
       value_template: >-
-        {{ is_number(states('sensor.growatt_tcp_canary_battery_battery_soc'))
-          and 0 <= states('sensor.growatt_tcp_canary_battery_battery_soc') | float(-1) <= 100 }}
+        {{ is_number(states('sensor.growatt_battery_battery_soc'))
+          and 0 <= states('sensor.growatt_battery_battery_soc') | float(-1) <= 100 }}
   actions:
     - action: input_number.set_value
       target:
         entity_id: input_number.peblar_solar_battery_target_soc
       data:
         value: >-
-          {% set soc = states('sensor.growatt_tcp_canary_battery_battery_soc') | float(0) %}
+          {% set soc = states('sensor.growatt_battery_battery_soc') | float(0) %}
           {{ [95, [5, soc] | max] | min | round(0) }}
     - action: logbook.log
       data:
@@ -76,7 +76,7 @@
   description: >-
     The slow loop starts on sustained grid export and stops on the SOC target;
     the minute loop trims Peblar current against a SOC-dependent battery power
-    target.
+    target while removing positive grid export.
     Arming anchors the target to the current SoC once. Stale inputs stop
     charging without disarming the test; transient unavailable values within
     the freshness window are tolerated.
@@ -174,25 +174,25 @@
                   - switch.peblar_ev_charger_charge
                   - number.peblar_ev_charger_charge_limit
                   - select.peblar_ev_charger_smart_charging
-                  - sensor.growatt_tcp_canary_grid_grid_export_power
-                  - sensor.growatt_tcp_canary_battery_battery_soc
-                  - sensor.growatt_tcp_canary_battery_battery_charge_power
-                  - sensor.growatt_tcp_canary_battery_battery_discharge_power
+                  - sensor.growatt_grid_grid_export_power
+                  - sensor.growatt_battery_battery_soc
+                  - sensor.growatt_battery_battery_charge_power
+                  - sensor.growatt_battery_battery_discharge_power
             - delay: "00:00:02"
             - choose:
                 - conditions:
                     - condition: template
                       value_template: >-
-                        {% set t = as_timestamp(states('sensor.growatt_tcp_canary_last_update'), 0) %}
+                        {% set t = as_timestamp(states('sensor.growatt_last_update'), 0) %}
                         {% set n = as_timestamp(now()) %}
                         {{ t == 0 or n - t < 0 or n - t > growatt_max_age_s
                           or not is_number(states('number.peblar_ev_charger_charge_limit'))
                           or states('sensor.peblar_ev_charger_state') in ['unknown', 'unavailable', 'none']
                           or states('select.peblar_ev_charger_smart_charging') in ['unknown', 'unavailable', 'none']
-                          or not is_number(states('sensor.growatt_tcp_canary_grid_grid_export_power'))
-                          or not is_number(states('sensor.growatt_tcp_canary_battery_battery_soc'))
-                          or not is_number(states('sensor.growatt_tcp_canary_battery_battery_charge_power'))
-                          or not is_number(states('sensor.growatt_tcp_canary_battery_battery_discharge_power')) }}
+                          or not is_number(states('sensor.growatt_grid_grid_export_power'))
+                          or not is_number(states('sensor.growatt_battery_battery_soc'))
+                          or not is_number(states('sensor.growatt_battery_battery_charge_power'))
+                          or not is_number(states('sensor.growatt_battery_battery_discharge_power')) }}
                   sequence:
                     - action: switch.turn_off
                       target:
@@ -234,7 +234,7 @@
                       state: "on"
                     - condition: template
                       value_template: >-
-                        {% set soc = states('sensor.growatt_tcp_canary_battery_battery_soc') | float(-1) %}
+                        {% set soc = states('sensor.growatt_battery_battery_soc') | float(-1) %}
                         {% set target = states('input_number.peblar_solar_battery_target_soc') | float(90) %}
                         {% set on_for_s = as_timestamp(now()) - as_timestamp(states.switch.peblar_ev_charger_charge.last_changed, 0) %}
                         {% set cutoff = as_timestamp(now()) | int(0) - relay_window_s %}
@@ -269,7 +269,7 @@
                 - conditions:
                     - condition: template
                       value_template: >-
-                        {% set soc = states('sensor.growatt_tcp_canary_battery_battery_soc') %}
+                        {% set soc = states('sensor.growatt_battery_battery_soc') %}
                         {{ (is_number(soc) and (soc | float < 0 or soc | float > 100))
                           or states('sensor.peblar_ev_charger_state') not in ['suspended', 'charging']
                           }}
@@ -324,9 +324,9 @@
                     - if:
                         - condition: template
                           value_template: >-
-                            {% set soc = states('sensor.growatt_tcp_canary_battery_battery_soc') | float(-1) %}
+                            {% set soc = states('sensor.growatt_battery_battery_soc') | float(-1) %}
                             {% set target = states('input_number.peblar_solar_battery_target_soc') | float(90) %}
-                            {% set export_w = states('sensor.growatt_tcp_canary_grid_grid_export_power') | float(-1) %}
+                            {% set export_w = states('sensor.growatt_grid_grid_export_power') | float(-1) %}
                             {% set off_for_s = as_timestamp(now()) - as_timestamp(states.switch.peblar_ev_charger_charge.last_changed, 0) %}
                             {% set cutoff = as_timestamp(now()) | int(0) - relay_window_s %}
                             {% set recent_switches = namespace(count=0) %}
@@ -364,7 +364,7 @@
                       state: "off"
                     - condition: template
                       value_template: >-
-                        {{ is_number(states('sensor.growatt_tcp_canary_battery_battery_soc')) }}
+                        {{ is_number(states('sensor.growatt_battery_battery_soc')) }}
                   sequence:
                     - action: switch.turn_off
                       target:
@@ -434,15 +434,17 @@
                       state: "on"
                     - condition: template
                       value_template: >-
-                        {% set charge_state = states('sensor.growatt_tcp_canary_battery_battery_charge_power') %}
-                        {% set discharge_state = states('sensor.growatt_tcp_canary_battery_battery_discharge_power') %}
+                        {% set charge_state = states('sensor.growatt_battery_battery_charge_power') %}
+                        {% set discharge_state = states('sensor.growatt_battery_battery_discharge_power') %}
                         {% set peblar_state = states('sensor.peblar_ev_charger_power') %}
                         {% set charge_w = charge_state | float(0) %}
                         {% set discharge_w = discharge_state | float(0) %}
                         {% set peblar_w = peblar_state | float(0) %}
+                        {% set grid_export_state = states('sensor.growatt_grid_grid_export_power') %}
+                        {% set grid_export_w = grid_export_state | float(0) %}
                         {% set limit = states('number.peblar_ev_charger_charge_limit') | float(6) %}
                         {% set max_limit = state_attr('number.peblar_ev_charger_charge_limit', 'max') | float(0) %}
-                        {% set soc = states('sensor.growatt_tcp_canary_battery_battery_soc') | float(0) %}
+                        {% set soc = states('sensor.growatt_battery_battery_soc') | float(0) %}
                         {% set target = states('input_number.peblar_solar_battery_target_soc') | float(90) %}
                         {% set soc_error = target - soc %}
                         {% set net_battery_w = charge_w - discharge_w %}
@@ -452,28 +454,31 @@
                         {% elif soc_error < -soc_target_band_pct %}
                           {% set desired_battery_w = -soc_target_battery_power_w %}
                         {% endif %}
+                        {% set control_error = net_battery_w - desired_battery_w + [grid_export_w, 0] | max %}
                         {{ trigger.id == 'control'
                           and is_number(soc)
                           and is_number(charge_state)
                           and is_number(discharge_state)
                           and is_number(peblar_state)
+                          and is_number(grid_export_state)
                           and peblar_w > 0
                           and limit >= min_peblar_charge_a
                           and max_limit >= min_peblar_charge_a
-                          and (charge_w - discharge_w - desired_battery_w) | abs > 20 }}
+                          and control_error | abs > 20 }}
                   sequence:
                     - action: number.set_value
                       target:
                         entity_id: number.peblar_ev_charger_charge_limit
                       data:
                         value: >-
-                          {% set charge_w = states('sensor.growatt_tcp_canary_battery_battery_charge_power') | float(0) %}
-                          {% set discharge_w = states('sensor.growatt_tcp_canary_battery_battery_discharge_power') | float(0) %}
+                          {% set charge_w = states('sensor.growatt_battery_battery_charge_power') | float(0) %}
+                          {% set discharge_w = states('sensor.growatt_battery_battery_discharge_power') | float(0) %}
                           {% set peblar_w = states('sensor.peblar_ev_charger_power') | float(0) %}
+                          {% set grid_export_w = states('sensor.growatt_grid_grid_export_power') | float(0) %}
                           {% set limit = states('number.peblar_ev_charger_charge_limit') | float(6) %}
                           {% set max_limit = state_attr('number.peblar_ev_charger_charge_limit', 'max') | float(0) %}
                           {% set net_battery_w = charge_w - discharge_w %}
-                          {% set soc = states('sensor.growatt_tcp_canary_battery_battery_soc') | float(0) %}
+                          {% set soc = states('sensor.growatt_battery_battery_soc') | float(0) %}
                           {% set target = states('input_number.peblar_solar_battery_target_soc') | float(90) %}
                           {% set soc_error = target - soc %}
                           {% set desired_battery_w = 0 %}
@@ -482,9 +487,9 @@
                           {% elif soc_error < -soc_target_band_pct %}
                             {% set desired_battery_w = -soc_target_battery_power_w %}
                           {% endif %}
-                          {% set battery_power_error = net_battery_w - desired_battery_w %}
+                          {% set control_error = net_battery_w - desired_battery_w + [grid_export_w, 0] | max %}
                           {% set watts_per_amp = peblar_w / limit %}
-                          {% set target_limit = limit + battery_balance_gain * battery_power_error / watts_per_amp %}
+                          {% set target_limit = limit + battery_balance_gain * control_error / watts_per_amp %}
                           {{ [max_limit, [min_peblar_charge_a, target_limit] | max] | min | round(2) }}
       default: []
 
