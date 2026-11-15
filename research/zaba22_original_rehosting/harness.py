@@ -128,10 +128,14 @@ def execute_original(function: int, data: bytes, *, seed_crc_tables: bool = Fals
         uc.mem_write(CRC_LOW_TABLE, low)
         uc.mem_write(CRC_HIGH_TABLE, high)
 
+    return_hit = False
+
     def code_hook(_uc: Uc, address: int, size: int, _user_data: Any) -> None:
+        nonlocal return_hit
         pc = address & ~1
         trace.append((pc, size))
         if pc == RETURN_STUB:
+            return_hit = True
             _uc.emu_stop()
 
     def mmio_hook(_uc: Uc, access: int, address: int, size: int, value: int, _user_data: Any) -> None:
@@ -152,13 +156,15 @@ def execute_original(function: int, data: bytes, *, seed_crc_tables: bool = Fals
     uc.reg_write(UC_ARM_REG_R13, STACK_TOP)
     uc.reg_write(UC_ARM_REG_LR, RETURN_STUB | 1)
     error: str | None = None
-    stop_reason = "return_stub"
+    stop_reason = "instruction_limit"
     try:
         uc.emu_start(function | 1, RETURN_STUB | 1, count=max_instructions)
     except UcError as exc:
         error = str(exc)
         stop_reason = "emulator_error"
-    if trace and trace[-1][0] == RETURN_STUB:
+    if mmio_events:
+        stop_reason = "mmio_blocker"
+    elif return_hit:
         stop_reason = "return_stub"
     output = uc.reg_read(UC_ARM_REG_R0) if stop_reason == "return_stub" else None
     return _result(function=function, data=data, payload=payload, trace=trace, mmio_events=mmio_events, output=output, stop_reason=stop_reason, error=error)
@@ -191,7 +197,10 @@ def execute_reset_probe(*, max_instructions: int = 200) -> ExecutionResult:
         uc.emu_start(reset | 1, 0, count=max_instructions)
     except UcError as exc:
         error = str(exc)
-    return _result(function=reset, data=b"", payload=payload, trace=trace, mmio_events=mmio_events, output=None, stop_reason="mmio_blocker", error=error)
+    stop_reason = "emulator_error" if error else "instruction_limit"
+    if mmio_events:
+        stop_reason = "mmio_blocker"
+    return _result(function=reset, data=b"", payload=payload, trace=trace, mmio_events=mmio_events, output=None, stop_reason=stop_reason, error=error)
 
 
 def backend_availability() -> dict[str, object]:

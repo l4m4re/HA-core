@@ -47,6 +47,21 @@ def test_reset_probe_records_exact_first_mmio_blocker() -> None:
     assert result.trace[-1][0] == 0x080020BC
 
 
+def test_function_instruction_budget_is_reported_explicitly() -> None:
+    result = execute_original(BYTE_SUM_FUNCTION, b"abc", max_instructions=1)
+
+    assert result.stop_reason == "instruction_limit"
+    assert result.output is None
+    assert not result.mmio_events
+
+
+def test_reset_instruction_budget_is_not_reported_as_mmio() -> None:
+    result = execute_reset_probe(max_instructions=1)
+
+    assert result.stop_reason == "instruction_limit"
+    assert not result.mmio_events
+
+
 def test_trace_contains_original_entry_and_return_stub() -> None:
     result = execute_original(BYTE_SUM_FUNCTION, b"abc")
     addresses = [address for address, _size in result.trace]

@@ -109,6 +109,38 @@
     "evidence_class": "experimental",
     "confidence": "high",
     "claim": "The original-byte harness, vectors, trace boundary and boot blocker are reproducibly tested offline.",
-    "limitations": "No full boot, QEMU or Renode original-fragment run, or GDB remote session is claimed."
+    "limitations": "No full boot or Renode original-fragment run is claimed."
+  },
+  {
+    "id": "E-RH-008",
+    "source": "research/zaba22_original_rehosting/emulator/qemu_runner.py",
+    "source_kind": "emulator-debugger",
+    "original_bytes": true,
+    "emulator": "qemu-system-arm+gdb-multiarch",
+    "entry": "0x08003510 reset vector",
+    "inputs": {"machine": "stm32vldiscovery", "payload_sha256": "97c22678f14e490a748df03ea1c9d2940a74a1dd239d45e290a0843dab90c858"},
+    "outputs": {"breakpoint_pc": "0x080020bc", "instruction": "ldr r0, [r0, #0]", "initial_sp": "0x20000cf8"},
+    "mmio_events": [{"address": "0x40021000", "kind": "RCC read", "size": 4}],
+    "trace_digest": null,
+    "evidence_class": "experimental",
+    "confidence": "high",
+    "claim": "QEMU executed the original payload and an actual GDB remote session stopped at the known RCC instruction.",
+    "limitations": "This proves system-emulator/debugger reachability, not faithful STM32 peripheral behavior or full boot."
+  },
+  {
+    "id": "E-RH-009",
+    "source": "external/growatt-firmware/reports/ZABA22/instructions.tsv; external/growatt-firmware/reports/ZABA22/focused/ZABA22_arm_modbus_dispatch_boundary.json",
+    "source_kind": "firmware-analysis",
+    "original_bytes": false,
+    "emulator": "none",
+    "entry": "startup and Modbus boundaries",
+    "inputs": {"startup": "0x080020b8..0x08002230", "modbus": "0x08024f34, 0x0801e46c, 0x0802a638"},
+    "outputs": {"rcc_offsets": ["0x00", "0x04", "0x08", "0x2c"], "flash": "0x40022000", "vtor": "0xe000ed08", "fc06_fc10_path": "0x0801e46c -> 0x0802a638"},
+    "mmio_events": [],
+    "trace_digest": null,
+    "evidence_class": "static-derived",
+    "confidence": "medium",
+    "claim": "Firmware analysis bounds the minimum startup peripheral surface and the original Modbus ingress/dispatch/write path.",
+    "limitations": "Exact STM32 derivative, reset values, UART/scheduler/persistence semantics and complete register meaning remain unresolved."
   }
 ]
