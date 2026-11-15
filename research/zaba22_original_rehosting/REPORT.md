@@ -57,7 +57,7 @@ Resolve the exact derivative and PLLRDY/SWS contract with additional authoritati
 | E-RH-003 | experimental | unicorn | `0x080130bc Thumb` | Unicorn executed the original CRC16 function bytes and reproduced the independent Modbus CRC oracle. |
 | E-RH-004 | experimental | unicorn | `0x080130ea Thumb` | Unicorn executed a second original function and matched the independent byte-sum oracle. |
 | E-RH-005 | experimental | unicorn | `0x08003510 Thumb` | Original reset execution reaches the first unsupported RCC MMIO read at PC 0x080020bc. |
-| E-RH-006 | experimental | none | `backend availability` | Unicorn and QEMU/GDB have executed original ZABA22 fragments; Renode is available but only its tool availability has been verified. |
+| E-RH-006 | experimental | none | `backend availability` | The offline toolchain probe finds Unicorn, QEMU, Renode and GDB executables available in the development container. |
 | E-RH-007 | experimental | unicorn | `bounded fragment suite` | The original-byte harness, vectors, trace boundary and boot blocker are reproducibly tested offline. |
 | E-RH-008 | experimental | qemu-system-arm+gdb-multiarch | `0x08003510 reset vector` | QEMU executed the original payload and an actual GDB remote session stopped at the known RCC instruction. |
 | E-RH-009 | static-derived | none | `startup and Modbus boundaries` | Firmware analysis bounds the minimum startup peripheral surface and the original Modbus ingress/dispatch/write path. |
