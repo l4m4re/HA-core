@@ -44,6 +44,8 @@ PLL_READY = 1 << 25
 SWS_MASK = 0b11 << 2
 HSERDY_FLAG = 1 << 3
 PLLRDY_FLAG = 1 << 4
+HSERDY_CLEAR = 1 << 19
+PLLRDY_CLEAR = 1 << 20
 
 
 class AccessDirection(StrEnum):
@@ -193,9 +195,9 @@ class TraceDrivenPeripherals:
             self._registers[address] = (self._registers[address] & ~RCC_CFGR_WRITE_MASK) | (value & RCC_CFGR_WRITE_MASK)
         elif address == RCC_CIR:
             self._registers[address] = (self._registers[address] & ~RCC_CIR_WRITE_MASK) | (value & RCC_CIR_WRITE_MASK)
-            if value & (1 << 18):
+            if value & HSERDY_CLEAR:
                 self.poll_state.cir_flags &= ~HSERDY_FLAG
-            if value & (1 << 20):
+            if value & PLLRDY_CLEAR:
                 self.poll_state.cir_flags &= ~PLLRDY_FLAG
         elif address == RCC_CFGR2:
             self._registers[address] = (self._registers[address] & ~RCC_CFGR2_WRITE_MASK) | (value & RCC_CFGR2_WRITE_MASK)

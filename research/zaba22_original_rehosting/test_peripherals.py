@@ -57,7 +57,7 @@ def test_cir_ready_flag_is_cleared_by_its_documented_write_one_clear_bit() -> No
     model.advance_time()
 
     assert model.read(RCC_CIR) & (1 << 3)
-    model.write(RCC_CIR, 1 << 18)
+    model.write(RCC_CIR, 1 << 19)
     assert not model.read(RCC_CIR) & (1 << 3)
 
 
