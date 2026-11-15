@@ -1,0 +1,11 @@
+using sysbus
+
+$image?=@external/growatt-firmware/ALBA18/ZABA22-payload.bin
+
+mach create
+machine LoadPlatformDescription @research/zaba22_original_rehosting/system_emulator/renode-zaba22.repl
+sysbus LoadBinary $image 0x08000000
+sysbus LoadBinary $image 0x00000000
+machine StartGdbServer 3334
+machine Pause
+
