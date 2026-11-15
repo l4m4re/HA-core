@@ -22,6 +22,12 @@ The reset vector is probed from the original vector table. Boot reaches the
 first unsupported RCC access at `PC=0x080020bc`, `address=0x40021000`; that is
 recorded as a blocker, not bypassed with a guessed peripheral model.
 
+Phase 3 also provides a trace-driven RCC/FLASH/VTOR contract for bounded
+original reset execution. With synthetic HSE timing explicitly labeled as
+emulator state, the original RCC read completes and execution reaches the
+firmware-derived PLLRDY polling boundary at `PC=0x080021d0`. The unresolved
+PLL/SWS semantics stop execution as a typed blocker.
+
 QEMU, Renode and GDB are installed in the development container and are
 probed by `backend_probe.py`. The Renode installation is the portable release
 with its embedded .NET runtime; a separate `dotnet` command is not required.

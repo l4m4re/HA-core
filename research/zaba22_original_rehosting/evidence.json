@@ -142,5 +142,21 @@
     "confidence": "medium",
     "claim": "Firmware analysis bounds the minimum startup peripheral surface and the original Modbus ingress/dispatch/write path.",
     "limitations": "Exact STM32 derivative, reset values, UART/scheduler/persistence semantics and complete register meaning remain unresolved."
+  },
+  {
+    "id": "E-RH-010",
+    "source": "research/zaba22_original_rehosting/emulator/peripheral_execution.py",
+    "source_kind": "original-execution-with-model",
+    "original_bytes": true,
+    "emulator": "unicorn+trace-driven-peripherals",
+    "entry": "0x08003510 reset vector",
+    "inputs": {"hse_ready_after_polls": 3, "max_instructions": 20000, "payload_sha256": "97c22678f14e490a748df03ea1c9d2940a74a1dd239d45e290a0843dab90c858"},
+    "outputs": {"stop_reason": "peripheral_blocker", "stop_pc": "0x080021d0", "peripheral_events": 36, "blocker": "unbounded poll RCC_CR.PLLRDY"},
+    "mmio_events": [{"address": "0x40021000", "kind": "RCC CR read completed", "size": 4}],
+    "trace_digest": null,
+    "evidence_class": "experimental",
+    "confidence": "medium",
+    "claim": "Original reset instructions execute the RCC read and progress beyond the first blocker before stopping at the firmware-derived unbounded PLLRDY poll.",
+    "limitations": "HSE readiness timing is synthetic emulator state; PLLRDY remains intentionally unresolved and no full boot is claimed."
   }
 ]
