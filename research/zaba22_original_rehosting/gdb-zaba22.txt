@@ -1,0 +1,12 @@
+# Prepared for a GDB-capable backend. The local environment has no gdb,
+# gdb-multiarch, QEMU, or Renode; these commands are not executed here.
+set architecture arm
+set endian little
+set disassemble-next-line on
+target remote :1234
+add-symbol-file external/growatt-firmware/ALBA18/ZABA22-payload.bin 0x08000000
+break *0x080130bc
+break *0x080020bc
+continue
+display/i $pc
+info registers r0 r1 r13 lr pc
