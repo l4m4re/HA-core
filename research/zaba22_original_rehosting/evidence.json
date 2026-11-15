@@ -92,7 +92,7 @@
     "trace_digest": null,
     "evidence_class": "experimental",
     "confidence": "high",
-    "claim": "Unicorn, QEMU, Renode and GDB tooling are executable or available in the current development container; only Unicorn has executed the original fragment so far.",
+    "claim": "Unicorn and QEMU/GDB have executed original ZABA22 fragments; Renode is available but only its tool availability has been verified.",
     "limitations": "Renode uses its portable embedded .NET runtime, so a standalone dotnet command is not installed. Tool availability is not execution evidence."
   },
   {
