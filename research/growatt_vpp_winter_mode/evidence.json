@@ -1,0 +1,152 @@
+[
+  {
+    "evidence_id": "E-P1-001",
+    "register": "H30100/H3037/H30475",
+    "operation": "derived-state",
+    "value": "H30475=min(H3037,35) once when H30100=1, pending clear, latch clear",
+    "evidence_class": "firmware-derived",
+    "source": "external/growatt-firmware/reports/ZABA22/focused/zaba22_h3037_h30475_annotated.c",
+    "claim": "The recovered ZABA22 ARM path contains a one-shot H3037 to H30475 bridge.",
+    "confidence": "high"
+  },
+  {
+    "evidence_id": "E-P1-002",
+    "register": "H30100/H30407",
+    "operation": "derived-state",
+    "value": "H30100!=1 legacy; H30100=1,H30407=1 timer; H30407!=1 VPP-TOU",
+    "evidence_class": "firmware-derived",
+    "source": "external/growatt-firmware/reports/ZABA22/focused/zaba22_h3037_h30475_annotated.c",
+    "claim": "The recovered worker selects legacy versus VPP, then remote timer versus VPP-TOU.",
+    "confidence": "high"
+  },
+  {
+    "evidence_id": "E-P1-004",
+    "register": "H30100/H3037/H30475",
+    "operation": "write/derived-state",
+    "value": "H30100=1; H3037=10; H30475=20 rejected; H30475 remained 0",
+    "evidence_class": "experimental",
+    "source": "external/growatt-firmware/reports/live/h3037-h30475-zaba23-phase-d-authority-20261113.jsonl",
+    "claim": "The observed ZABA23 experiment did not show the ZABA22 bridge and rejected H30475=20.",
+    "confidence": "high"
+  },
+  {
+    "evidence_id": "E-P1-005",
+    "register": "H192",
+    "operation": "write",
+    "value": 64,
+    "evidence_class": "experimental",
+    "source": "external/growatt-rtu-broker/logs/growatt_shine_write_capture_20261112_171302.jsonl",
+    "claim": "FC06 H192=64 was physically forwarded and echoed; bit 6 meaning is unresolved.",
+    "confidence": "high"
+  },
+  {
+    "evidence_id": "E-P1-007",
+    "register": "H30100/H30405/H30406/H30475",
+    "operation": "write",
+    "value": "1/29/29/13",
+    "evidence_class": "experimental",
+    "source": "external/growatt-rtu-broker/logs/growatt_all_write_capture_20261113_154655.jsonl",
+    "claim": "A Winter Mode sequence was physically acknowledged, while later public readback was zero.",
+    "confidence": "high"
+  },
+  {
+    "evidence_id": "E-P2-001",
+    "register": "H30100",
+    "operation": "write",
+    "value": 1,
+    "evidence_class": "experimental",
+    "source": "external/growatt-rtu-broker/logs/growatt_all_write_capture_20261113_154655.jsonl",
+    "claim": "FC06 H30100=1 was physically forwarded and acknowledged, without same-transaction readback.",
+    "confidence": "high"
+  },
+  {
+    "evidence_id": "E-P2-002",
+    "register": "H30405",
+    "operation": "write",
+    "value": 30,
+    "evidence_class": "experimental",
+    "source": "external/growatt-rtu-broker/logs/growatt_all_write_capture_20261113_154655.jsonl",
+    "claim": "FC06 H30405=30 was physically forwarded and acknowledged.",
+    "confidence": "high"
+  },
+  {
+    "evidence_id": "E-P2-003",
+    "register": "H30406",
+    "operation": "write",
+    "value": 30,
+    "evidence_class": "experimental",
+    "source": "external/growatt-rtu-broker/logs/growatt_all_write_capture_20261113_154655.jsonl",
+    "claim": "FC06 H30406=30 was physically forwarded and acknowledged.",
+    "confidence": "high"
+  },
+  {
+    "evidence_id": "E-P2-004",
+    "register": "H30475",
+    "operation": "write",
+    "value": 10,
+    "evidence_class": "experimental",
+    "source": "external/growatt-rtu-broker/logs/growatt_all_write_capture_20261113_154655.jsonl",
+    "claim": "FC06 H30475=10 was physically forwarded and acknowledged, without direct post-write readback.",
+    "confidence": "high"
+  },
+  {
+    "evidence_id": "E-P2-005",
+    "register": "H192",
+    "operation": "write",
+    "value": 64,
+    "evidence_class": "experimental",
+    "source": "external/growatt-rtu-broker/logs/growatt_all_write_capture_20261113_154655.jsonl",
+    "claim": "FC06 H192=64 was physically forwarded and acknowledged; semantic meaning is unresolved.",
+    "confidence": "high"
+  },
+  {
+    "evidence_id": "E-P2-006",
+    "register": "H30407",
+    "operation": "write",
+    "value": null,
+    "evidence_class": "experimental",
+    "source": "external/growatt-rtu-broker/logs/growatt_all_write_capture_20261113_154655.jsonl",
+    "claim": "No H30407 write was found in the inspected write captures.",
+    "confidence": "medium"
+  },
+  {
+    "evidence_id": "E-P2-008",
+    "register": "H30407",
+    "operation": "read",
+    "value": 0,
+    "evidence_class": "experimental",
+    "source": ".staging/ha-config/growatt_register_scan_20261115_001353.csv",
+    "claim": "The inspected scan reported H30407=0; no transition was observed.",
+    "confidence": "medium"
+  },
+  {
+    "evidence_id": "E-P2-009",
+    "register": "H30475",
+    "operation": "read",
+    "value": 0,
+    "evidence_class": "experimental",
+    "source": ".staging/ha-config/growatt_register_scan_20261115_001353.csv",
+    "claim": "The scan did not expose H30475=10 after the acknowledged write; this is a provider/readback discrepancy.",
+    "confidence": "medium"
+  },
+  {
+    "evidence_id": "E-P3-007",
+    "register": "H30407",
+    "operation": "derived-state",
+    "value": 1,
+    "evidence_class": "firmware-derived",
+    "source": "external/growatt-firmware/open-firmware/docs/zaba22-vpp-state-machine.md",
+    "claim": "With H30100=1, H30407=1 selects the remote-timer path; H30407!=1 selects VPP-TOU.",
+    "confidence": "high"
+  },
+  {
+    "evidence_id": "E-P3-009",
+    "register": "H30100",
+    "operation": "portal-result",
+    "value": "success",
+    "evidence_class": "experimental",
+    "source": ".staging/winter-mode-tou-issue-report.md",
+    "claim": "Portal success without a joined Modbus request is insufficient evidence of inverter application.",
+    "confidence": "low"
+  }
+]
