@@ -87,13 +87,13 @@
     "emulator": "none",
     "entry": "backend availability",
     "inputs": {},
-    "outputs": {"unicorn": true, "qemu_system_arm": false, "qemu_arm": false, "renode": false, "dotnet": false, "gdb": false, "gdb_multiarch": false},
+    "outputs": {"unicorn": true, "qemu_system_arm": true, "qemu_arm": true, "renode": true, "dotnet": false, "gdb": true, "gdb_multiarch": true},
     "mmio_events": [],
     "trace_digest": null,
     "evidence_class": "experimental",
     "confidence": "high",
-    "claim": "Only Unicorn is executable in the current environment; QEMU, Renode and GDB comparison cannot run locally.",
-    "limitations": "This is an environment limitation, not a claim that those tools cannot execute the fragment elsewhere."
+    "claim": "Unicorn, QEMU, Renode and GDB tooling are executable or available in the current development container; only Unicorn has executed the original fragment so far.",
+    "limitations": "Renode uses its portable embedded .NET runtime, so a standalone dotnet command is not installed. Tool availability is not execution evidence."
   },
   {
     "id": "E-RH-007",
@@ -109,6 +109,6 @@
     "evidence_class": "experimental",
     "confidence": "high",
     "claim": "The original-byte harness, vectors, trace boundary and boot blocker are reproducibly tested offline.",
-    "limitations": "No full boot, QEMU, Renode or GDB test is claimed."
+    "limitations": "No full boot, QEMU or Renode original-fragment run, or GDB remote session is claimed."
   }
 ]

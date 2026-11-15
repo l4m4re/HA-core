@@ -1,5 +1,6 @@
-# Prepared for a GDB-capable backend. The local environment has no gdb,
-# gdb-multiarch, QEMU, or Renode; these commands are not executed here.
+# Prepared for a GDB-capable backend. GDB, QEMU and Renode are now installed,
+# but these commands remain a recipe and are not claimed as an executed remote
+# session until a matching GDB server is launched for the original target.
 set architecture arm
 set endian little
 set disassemble-next-line on

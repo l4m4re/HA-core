@@ -22,9 +22,11 @@ The reset vector is probed from the original vector table. Boot reaches the
 first unsupported RCC access at `PC=0x080020bc`, `address=0x40021000`; that is
 recorded as a blocker, not bypassed with a guessed peripheral model.
 
-QEMU, Renode and GDB are probed but not installed by this package. The exact
-local availability result is in `backend_probe.py`; the prepared GDB commands
-are in `gdb-zaba22.txt`.
+QEMU, Renode and GDB are installed in the development container and are
+probed by `backend_probe.py`. The Renode installation is the portable release
+with its embedded .NET runtime; a separate `dotnet` command is not required.
+The prepared GDB commands are in `gdb-zaba22.txt`. Availability does not claim
+that the original fragment has already been executed through every backend.
 
 Run from the repository root:
 

@@ -8,11 +8,11 @@ Unicorn executes original ZABA22 ARM/Thumb bytes in a bounded offline harness. T
 
 ## Why it matters
 
-This is original-firmware execution, not reconstructed C/Python execution. Full boot is not claimed: the required STM32F1 peripheral behavior is not sufficiently evidenced. QEMU, Renode and GDB are unavailable locally, so their absence is recorded as an environment blocker rather than hidden behind a model.
+This is original-firmware execution, not reconstructed C/Python execution. Full boot is not claimed: the required STM32F1 peripheral behavior is not sufficiently evidenced. QEMU, Renode and GDB are installed and available for follow-up comparison; backend availability is not being confused with successful original-fragment execution.
 
 ## Do this first
 
-Install or provide pinned, reviewed QEMU/Renode/GDB runtimes in an isolated environment, then rerun the same original-byte fragment and compare trace, return value, MMIO and stop reason against the Unicorn evidence.
+Run the same original-byte fragment through QEMU and Renode where their CPU and memory contracts permit it, then compare trace, return value, MMIO and stop reason against the Unicorn evidence. GDB remote debugging remains prepared but unexecuted.
 
 ## What I did not check
 
@@ -34,8 +34,8 @@ Install or provide pinned, reviewed QEMU/Renode/GDB runtimes in an isolated envi
 | Backend | Original fragment executed here | Result |
 |---|---:|---|
 | Unicorn | Yes | CRC16 and byte-sum pass; reset reaches exact MMIO blocker |
-| QEMU | No | `qemu-system-arm` and `qemu-arm` absent |
-| Renode | No | `renode` and `dotnet` absent |
+| QEMU | Available; not yet used for the original fragment | `qemu-system-arm` and `qemu-arm` present |
+| Renode | Available; not yet used for the original fragment | portable `renode` 1.17.0 present with embedded .NET runtime |
 
 ## Evidence index
 
@@ -46,7 +46,7 @@ Install or provide pinned, reviewed QEMU/Renode/GDB runtimes in an isolated envi
 | E-RH-003 | experimental | unicorn | `0x080130bc Thumb` | Unicorn executed the original CRC16 function bytes and reproduced the independent Modbus CRC oracle. |
 | E-RH-004 | experimental | unicorn | `0x080130ea Thumb` | Unicorn executed a second original function and matched the independent byte-sum oracle. |
 | E-RH-005 | experimental | unicorn | `0x08003510 Thumb` | Original reset execution reaches the first unsupported RCC MMIO read at PC 0x080020bc. |
-| E-RH-006 | experimental | none | `backend availability` | Only Unicorn is executable in the current environment; QEMU, Renode and GDB comparison cannot run locally. |
+| E-RH-006 | experimental | none | `backend availability` | Unicorn, QEMU, Renode and GDB tooling are executable or available in the current development container; only Unicorn has executed the original fragment so far. |
 | E-RH-007 | experimental | unicorn | `bounded fragment suite` | The original-byte harness, vectors, trace boundary and boot blocker are reproducibly tested offline. |
 
 ## Reproduction
