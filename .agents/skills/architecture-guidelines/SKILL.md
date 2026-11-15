@@ -1,0 +1,269 @@
+---
+name: architecture-guidelines
+description: >-
+    First-principles architectural rules for subsystem/service/abstraction
+    design: minimalism, modularity, functional core, resilience, layer
+    self-sufficiency, integration, naming, and concurrency. TRIGGER when
+    introducing a subsystem/service/abstraction, refactoring across subsystem
+    boundaries, applying SOLID, deciding whether a control may rely on the layer
+    beneath it, designing an integration edge between applications or services,
+    or reviewing architectural properties (purity, idempotency, naming,
+    fail-fast). SKIP for bug fixes within an existing subsystem, content/copy edits, CSS-only
+    changes, dependency bumps, and trivial renames. Emits an `Enforcement`
+    handoff to `architecture-as-code` when a design decision yields an
+    enforceable dependency constraint.
+---
+
+# Architectural Discipline (First Principles)
+
+> **Core Directives**
+>
+> - **Patternization**: A unified, simpler whole beats a fragmented system of
+>   locally perfect solutions. Accept local suboptimality for universal
+>   patterns.
+> - **Minimalism**: Smallest viable solution. ZERO speculative extensibility.
+> - **Traceability**: Names reflect architectural layer, domain role, and
+>   technical purpose.
+> - **Dependency Discipline**: Graphs MUST be directed, acyclic, shallow. Cycles
+>   forbidden. Depth is cost.
+
+## 1. Minimalism & Abstraction
+
+- **YAGNI**: No speculative features or extensibility hooks.
+- **Rule of 3**: Wait for three proven instances before abstracting. Prefer
+  copying < 20 lines over premature abstraction.
+- **DRY (knowledge, not shape)**: A business rule, constant, or schema has
+  exactly one authoritative representation. Code-shape duplication defers to
+  Rule of 3.
+- **Frame-check before execute**: When an issue, spec, or PRD prescribes
+  implementation steps (a numbered "Implementation Approach" section, a
+  multi-step task list, a build/CI plumbing plan), DO NOT start by executing
+  step 1. First run the necessity gate from `functionality-complexity-tradeoff`
+  §1 against the _framing_ the steps assume — what problem is this code actually
+  addressing, does that problem still occur in this stack, is it already owned
+  by another layer? Issue authors prescribe solutions; the gate asks whether the
+  prescription matches a problem we have. A prescribed plan exceeding 3 steps or
+  introducing a novel abstraction is the strongest trigger for this check.
+
+## 2. Consistency & Coupling
+
+- **Eventual Consistency by Default**: Strong consistency couples subsystems.
+  Accept idempotency / compensation to preserve modularity.
+- **Full Migration**: When adopting a new pattern, migrate all sibling
+  subsystems in the same PR — but **always ask the user** and pick a pattern
+  that fits both new and existing logic.
+- **Dependency Inversion**: Domain logic depends on abstractions, never concrete
+  implementations.
+
+## 3. Functional Core
+
+- **Pure Domain Logic, I/O at the Edges**: Business logic is pure, side-effect
+  free, environment-agnostic. External systems live at the edges.
+- **Testability**: A pure core is unit-testable without mocks. If the domain
+  needs mocks, purity has been violated.
+
+## 4. Modularity
+
+- **SoC**: One responsibility per subsystem.
+- **Aspects are extracted, not interleaved**: an aspect has one obligation —
+  a rule over the subsystems it holds across — and one mechanism — one
+  subsystem that implements it. Extract the mechanism into its own subsystem;
+  never copy it per subsystem, never model the obligation as a subsystem.
+- **SRP**: One reason to change per subsystem. Two forces of change → split.
+- **Capability Boundary = Subsystem Boundary**: A capability with its own
+  domain name, lifecycle, dependency surface, test surface, or reason to change
+  gets its own subsystem directory. Do not group multiple atomic capabilities
+  in one parent subsystem unless together they form a higher-level capability
+  with a single public interface and shared change reason.
+- **High Cohesion, Loose Coupling**: Internals tightly related; external
+  dependencies minimized and abstracted.
+- **Interface Discipline**:
+    - _Caller_: depend on the contract, never the implementation.
+    - _Subsystem_: internals encapsulated; the interface is the only access
+      point.
+    - _Designer_: expose everything every caller needs and only what every
+      caller needs.
+
+**Review check:** If a directory contains multiple named capabilities, require
+one of: a single facade/interface proving they are one higher-level capability,
+or a split into capability-named subsystem directories. For each aspect the
+design touches, name its mechanism subsystem and the subsystems it holds
+across.
+
+## 5. Resilience
+
+- **Fail Fast**: Validate and sanitize inputs at all system or atomicity
+  boundaries.
+- **Idempotency**: Safe under repeated execution; succeeds when the desired
+  state already holds. Does not suppress errors that prevent reaching it.
+- **Statelessness**: Prefer stateless services.
+- **Failure Classification**: Categorize each external call as **hard** (blocks
+  subsequent steps) or **best-effort** (logged, no cascade) before
+  implementation.
+- **Atomicity**: Decide whether partial success is acceptable or rollback is
+  required.
+- **State Visibility**: Log decision and outcome at each step.
+
+## 6. Naming & Traceability
+
+- **Domain-Driven Names**: Every function, variable, directory reveals
+  architectural layer, domain role, and technical purpose. `utils` / `helpers`
+  fail this test.
+- **Self-Documenting Structure**: Directory and filename alone should reveal
+  architectural boundaries and business rules.
+
+## 7. Concurrency & Shared Mutable State
+
+Every shared mutable state must declare its concurrency model:
+
+- **Per-instance** (multi-tab) → use `navigator.locks` or `BroadcastChannel`.
+- **Per-tab** → fine; document in JSDoc.
+- **Global** → atomic writes or locks.
+
+**Review check:** if state is modified after an `await`, ask: _"is this guarded
+against concurrent mutation?"_
+
+## 8. Layer Self-Sufficiency
+
+- **Controls complete at their own layer**: a control a layer owns must hold on
+  that layer alone. One that works only because a lower layer limits who can
+  reach it is inherited, not implemented.
+- **Assume the layer below is absent**: every authentication and authorization
+  decision must hold with the endpoint publicly reachable. Network isolation,
+  private connectivity, and firewall placement are additional layers, never the
+  control.
+- **Ambient guarantees are invisible dependencies**: the assumption lives
+  outside the codebase, so the deployment or infrastructure change that
+  invalidates it never appears in a diff, review, or test of the code relying
+  on it.
+- **Name the reason for every gap**: when a control is weakened, deferred, or
+  dropped, state why. A reason that cites a property of a lower layer or the
+  deployment environment means the control is missing, not satisfied.
+
+**Review check:** for each control, ask _"does this still hold when the layer
+below it disappears?"_ A "no" is a defect in the layer under review, never a
+requirement on the layer below.
+
+## 9. Integration Discipline
+
+Rules for edges that cross an application boundary: a different deployable,
+data store, team, or lifecycle.
+
+- **Smart endpoints, dumb pipes**: The transport (gateway, proxy, queue,
+  topic, bus) decouples parties in location and time and does nothing else.
+  Business logic, validation, enrichment, transformation, storage, replay,
+  and access decisions live in the endpoints, never in the pipe.
+- **Producers are consumer-agnostic; consumers transform**: A producer
+  publishes its own domain representation once. Each consumer maps it into
+  its own model. A canonical or unified intermediate model shared across
+  applications couples every party to every change; do not introduce one.
+- **No peer internals**: An application reaches another only through that
+  application's published contract (API, event, queue, file exchange), never
+  its database, file system, or internal subsystems. Reaching past the contract
+  is the integration form of the interface violation in §4.
+- **Untrusted network**: Every cross-application edge is designed for the
+  open internet. The receiving endpoint authenticates, authorizes, and
+  validates on its own; §8 governs what the pipe's placement can and cannot
+  satisfy.
+- **Asynchronous where the caller can continue**: Use a queue or topic when
+  the caller does not need the answer to proceed; reserve synchronous
+  request-response for when it does. Fire-and-forget only where loss is
+  acceptable and stated.
+- **Contracts expose domain, not implementation**: Payloads carry domain
+  entities, never storage rows, join tables, or internal identifiers. A change
+  to a shared payload shape follows `evolutionary-database-design`.
+
+**Review check:** every rule above needs a question, or the check passes while
+the rule fails. For each cross-application edge, ask all four:
+
+1. _"Which side transforms, and what does the pipe do besides carry?"_ An
+   answer that names the pipe is a defect in the endpoint.
+2. _"Does the receiver authenticate, authorize, and validate on its own, as if
+   the network were public?"_
+3. _"Does the caller wait for an answer it does not need, and what happens to
+   the message when the pipe fails after the caller's own write?"_ A
+   synchronous edge that leaves a stored record with no way to complete or
+   retry it is an unrecoverable half-state, not a failed call.
+4. _"Does the edge reach past the peer's published contract, and does the
+   payload carry domain entities rather than storage rows or internal
+   identifiers?"_
+
+> [!IMPORTANT] **Complexity Warning**: If a solution violates any guideline
+> above, state: _"Complexity Warning: introduces [X]. A simpler alternative is
+> [Y]."_ If the violation is non-trivial, see `structural-simplification` §8
+> Decision Protocol for a per-axis comparison before accepting it.
+
+## 10. Enforcement Handoff
+
+Use `architecture-as-code` only for constraints that can be enforced as import
+or dependency rules. Do not duplicate this skill's principles there; hand off
+the specific rule to encode.
+
+Examples:
+
+```
+Principle:   DI / functional core
+Constraint:  domain must not import infrastructure
+Enforcement: add architecture rule: forbid <domain-subsystem> -> <infra-subsystem>
+```
+
+```
+Principle:   interface discipline
+Constraint:  external callers use the facade only
+Enforcement: add architecture rule: forbid * -> <subsystem-internal-*>, except <subsystem-*>
+```
+
+```
+Principle:   integration discipline
+Constraint:  no subsystem reaches a peer application's internals
+Enforcement: add architecture rule: forbid * -> <peer-storage-client | peer-internal-*>, except <integration-adapter-*>
+```
+
+```
+Principle:   aspect extraction
+Constraint:  only <audit-mechanism> reaches the audit internals and SDK
+Enforcement: add architecture rule: forbid * -> <audit-internal-*>, except <audit-mechanism>
+```
+
+A principle can also settle as no handoff. Record that outcome rather than
+omitting it:
+
+```
+Principle:   layer self-sufficiency
+Constraint:  the control holds with the layer below absent
+Enforcement: none - not an import or dependency edge; verify by exercising the
+             subsystem without that layer (`defect-shift-left`)
+```
+
+One aspect yields two handoffs: the mechanism's exclusivity edge above, and a
+coverage obligation that is not an edge:
+
+```
+Principle:   aspect coverage
+Constraint:  every subsystem in <holds across> routes through <audit-mechanism>
+Enforcement: none - not an edge; place a coverage check over the subsystem
+             registry (`defect-shift-left`)
+```
+
+## 11. Output Contract
+
+When this skill changes or rejects a design, emit a coder-facing decision
+record:
+
+```
+Subject:        <subsystem / service / abstraction / PR / code path>
+Decision:       Proceed | Simplify | Split | Inline | Reject | Defer
+Principle:      <YAGNI | Rule of 3 | DRY | SoC | SRP | capability-boundary | DI | fail-fast | idempotency | atomicity | integration | layer-self-sufficiency | naming | concurrency | aspect>
+Evidence:       <callers, imports, tests, runtime invariant, or file paths checked>
+Enforcement:    <none | add architecture rule: constraint | update architecture rule: constraint>
+Next action:    <edit, delete, extract, add test, add lint rule, or ask user>
+Verification:   <command / review check / Not run + reason>
+```
+
+## See also
+
+- **`functionality-complexity-tradeoff`** — necessity gate and worth ledger applied to individual decisions.
+- **`structural-simplification`** — per-axis complexity comparison (`D, K, P, n`).
+- **`morphogenetic-architecture`** — declared placement, observed coupling fields, and topology evolution.
+- **`architecture-as-code`** — consumes explicit `Enforcement` handoffs and turns enforceable dependency constraints into lint rules.
+- **`evolutionary-database-design`** — staged, compatible change to a payload or stored shape shared across an integration edge.
